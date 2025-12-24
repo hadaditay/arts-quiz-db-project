@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Node / JS
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+dist/
+build/
+.turbo/
+.next/
+.cache/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+
+# Vite
+*.vite*
+vite.config.ts.timestamp*

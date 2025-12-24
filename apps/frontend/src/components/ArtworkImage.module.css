@@ -1,0 +1,97 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imageWrap {
+  position: relative;
+  background: #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.imageFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.button {
+  background: #0ea5e9;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.subtle {
+  color: #475569;
+  font-size: 13px;
+}
+
+.placeholder {
+  padding: 16px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modalControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.modalControls button {
+  background: #e2e8f0;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.modalBody {
+  background: #0f172a;
+  border-radius: 12px;
+  overflow: auto;
+  display: grid;
+  place-items: center;
+}
+
+.modalImage {
+  max-width: 90vw;
+  max-height: 80vh;
+  transition: transform 0.2s ease;
+  object-fit: contain;
+}
