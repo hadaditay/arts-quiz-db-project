@@ -29,6 +29,32 @@ const BASE_SELECT = `SELECT
   tags
 FROM met_artwork`;
 
+const parseTags = (value: unknown): string[] | null => {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value.filter(Boolean) as string[];
+  if (typeof value === 'object') {
+    // mysql2 can return JSON columns as objects already; stringify then parse for consistency.
+    try {
+      return parseTags(JSON.stringify(value));
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    try {
+      return JSON.parse(trimmed) as string[];
+    } catch {
+      return trimmed
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+    }
+  }
+  return null;
+};
+
 function mapArtworkRow(row: RowDataPacket): Artwork {
   return {
     artworkId: row.artwork_id,
@@ -45,7 +71,7 @@ function mapArtworkRow(row: RowDataPacket): Artwork {
     primaryImage: row.primary_image,
     primaryImageSmall: row.primary_image_small,
     objectUrl: row.object_url,
-    tags: row.tags ? JSON.parse(row.tags) : null
+    tags: parseTags(row.tags)
   };
 }
 

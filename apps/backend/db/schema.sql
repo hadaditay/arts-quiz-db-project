@@ -1,3 +1,4 @@
+-- Core Met artwork records pulled from the CSV/API.
 CREATE TABLE IF NOT EXISTS met_artwork (
   artwork_id BIGINT PRIMARY KEY,
   title VARCHAR(512),
@@ -17,6 +18,7 @@ CREATE TABLE IF NOT EXISTS met_artwork (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Met artists/constituents and link table (not yet used by questions, but available for expansion).
 CREATE TABLE IF NOT EXISTS met_constituent (
   constituent_id BIGINT PRIMARY KEY,
   display_name VARCHAR(512),
@@ -32,6 +34,7 @@ CREATE TABLE IF NOT EXISTS met_artwork_constituent (
   CONSTRAINT fk_artwork_constituent_const FOREIGN KEY (constituent_id) REFERENCES met_constituent(constituent_id) ON DELETE CASCADE
 );
 
+-- Auth model: username-only users and session tracking.
 CREATE TABLE IF NOT EXISTS game_user (
   user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(64) NOT NULL UNIQUE,
@@ -47,6 +50,7 @@ CREATE TABLE IF NOT EXISTS game_session (
   CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES game_user(user_id) ON DELETE CASCADE
 );
 
+-- Game rounds store each asked question and answer state.
 CREATE TABLE IF NOT EXISTS game_round (
   round_id CHAR(36) PRIMARY KEY,
   session_id CHAR(36) NOT NULL,
@@ -63,6 +67,7 @@ CREATE TABLE IF NOT EXISTS game_round (
   CONSTRAINT fk_round_artwork FOREIGN KEY (artwork_id) REFERENCES met_artwork(artwork_id) ON DELETE CASCADE
 );
 
+-- Simple all-time leaderboard (one row per user).
 CREATE TABLE IF NOT EXISTS leaderboard_all_time (
   user_id BIGINT PRIMARY KEY,
   score BIGINT DEFAULT 0,
@@ -70,6 +75,7 @@ CREATE TABLE IF NOT EXISTS leaderboard_all_time (
   CONSTRAINT fk_leaderboard_user FOREIGN KEY (user_id) REFERENCES game_user(user_id) ON DELETE CASCADE
 );
 
+-- Indexes defined without IF NOT EXISTS for compatibility; drop first if rerunning on an existing DB.
 CREATE INDEX idx_artwork_department ON met_artwork (department);
 CREATE INDEX idx_artwork_culture ON met_artwork (culture);
 CREATE INDEX idx_artwork_medium ON met_artwork (medium);
