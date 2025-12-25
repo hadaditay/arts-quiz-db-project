@@ -1,6 +1,7 @@
 import { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import { Artwork, QuestionOption } from '../types';
 import { shuffle } from '../utils/random';
+import { fetchMetArtwork } from '../utils/metApi';
 
 const FIELD_MAP = {
   department: 'department',
@@ -75,17 +76,44 @@ function mapArtworkRow(row: RowDataPacket): Artwork {
   };
 }
 
+async function ensureArtworkImages(artwork: Artwork): Promise<Artwork | null> {
+  // If we already have a small image URL, use what we have and skip API fetch.
+  if (artwork.primaryImageSmall) {
+    return artwork;
+  }
+
+  const apiObject = await fetchMetArtwork(artwork.artworkId);
+  if (!apiObject) return null;
+
+  const primaryImageSmall = apiObject.primaryImageSmall || apiObject.primaryImage || null;
+  const primaryImage = artwork.primaryImage || apiObject.primaryImage || apiObject.primaryImageSmall || null;
+  const objectUrl = artwork.objectUrl || apiObject.objectURL || null;
+
+  if (!primaryImageSmall) return null;
+
+  return {
+    ...artwork,
+    primaryImageSmall,
+    primaryImage,
+    objectUrl
+  };
+}
+
 export async function getRandomArtworkWithField(
   field: ArtworkField,
   connection: PoolConnection
 ): Promise<Artwork | null> {
   const column = FIELD_MAP[field];
-  const [rows] = await connection.query<RowDataPacket[]>(
-    `${BASE_SELECT} WHERE ${column} IS NOT NULL AND ${column} != '' AND primary_image_small IS NOT NULL ORDER BY RAND() LIMIT 1`
-  );
-
-  if (!rows.length) return null;
-  return mapArtworkRow(rows[0]);
+  for (let i = 0; i < 20; i += 1) {
+    const [rows] = await connection.query<RowDataPacket[]>(
+      `${BASE_SELECT} WHERE ${column} IS NOT NULL AND ${column} != '' ORDER BY RAND() LIMIT 1`
+    );
+    if (!rows.length) return null;
+    const artwork = mapArtworkRow(rows[0]);
+    const withImages = await ensureArtworkImages(artwork);
+    if (withImages) return withImages;
+  }
+  return null;
 }
 
 export async function getDistinctFieldValues(

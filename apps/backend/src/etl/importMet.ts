@@ -22,21 +22,16 @@ interface RawMetRow {
   'Is Highlight': string;
 }
 
-interface MetApiObject {
-  objectID: number;
-  primaryImage: string;
-  primaryImageSmall: string;
-  isPublicDomain: boolean;
-  objectURL: string;
-  tags?: { term?: string }[];
-}
-
-const MET_API_BASE = 'https://collectionapi.metmuseum.org/public/collection/v1/objects';
 const parsedLimit = Number(process.env.MET_ETL_LIMIT);
 const MAX_ROWS = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
 
 const parseBool = (value: string | undefined) =>
   value ? value.toLowerCase() === 'true' || value === '1' : false;
+
+const clamp = (value: string | undefined | null, max: number): string | null => {
+  if (!value) return null;
+  return value.slice(0, max);
+};
 
 const parseIntOrNull = (value: string | undefined) => {
   const num = Number.parseInt(value || '', 10);
@@ -56,21 +51,6 @@ const bucketEra = (beginYear: number | null, endYear: number | null) => {
   const century = Math.floor((year - 1) / 100) + 1;
   return `${toOrdinal(century)} century`;
 };
-
-async function fetchMetObject(objectId: number): Promise<MetApiObject | null> {
-  try {
-    const response = await fetch(`${MET_API_BASE}/${objectId}`);
-    if (!response.ok) {
-      console.warn(`Met API responded ${response.status} for object ${objectId}`);
-      return null;
-    }
-
-    return (await response.json()) as MetApiObject;
-  } catch (error) {
-    console.warn(`Failed to fetch Met object ${objectId}: ${(error as Error).message}`);
-    return null;
-  }
-}
 
 async function loadCsv(filePath: string) {
   const pool = db.pool;
@@ -98,29 +78,8 @@ async function loadCsv(filePath: string) {
             .filter(Boolean)
         : [];
 
-    // Fetch missing image URLs (and tags) from the Met API using the object ID.
-    if (isPublicDomain && (!primaryImageSmall || !primaryImage)) {
-      const apiObject = await fetchMetObject(artworkId);
-      if (apiObject) {
-        primaryImageSmall = primaryImageSmall || apiObject.primaryImageSmall || apiObject.primaryImage;
-        primaryImage = primaryImage || apiObject.primaryImage;
-        objectUrl = objectUrl || apiObject.objectURL || null;
-        if (apiObject.tags?.length) {
-          const apiTags = apiObject.tags
-            .map((t) => t.term)
-            .filter((t): t is string => Boolean(t));
-          if (apiTags.length && !tags.length) {
-            tags = apiTags;
-          }
-        }
-        // Use the API's public-domain flag if the CSV is missing/incorrect.
-        if (typeof apiObject.isPublicDomain === 'boolean') {
-          isPublicDomain = apiObject.isPublicDomain;
-        }
-      }
-    }
-
-    if (!primaryImageSmall || !isPublicDomain) continue;
+    // Only import rows that are public domain; image URLs can be fetched on-demand later.
+    if (!isPublicDomain) continue;
 
     const beginYear = parseIntOrNull(record['Object Begin Date']);
     const endYear = parseIntOrNull(record['Object End Date']);
@@ -149,19 +108,19 @@ async function loadCsv(filePath: string) {
         tags = VALUES(tags)`,
       [
         artworkId,
-        record.Title,
-        record.Department || null,
-        record.Culture || null,
-        record.Classification || null,
-        record.Medium || null,
+        clamp(record.Title, 512),
+        clamp(record.Department, 255),
+        clamp(record.Culture, 255),
+        clamp(record.Classification, 255),
+        clamp(record.Medium, 255),
         beginYear,
         endYear,
-        era,
+        clamp(era || undefined, 64),
         isPublicDomain ? 1 : 0,
         parseBool(record['Is Highlight']) ? 1 : 0,
         primaryImage,
         primaryImageSmall,
-        objectUrl,
+        clamp(objectUrl, 2048),
         JSON.stringify(tags)
       ]
     );

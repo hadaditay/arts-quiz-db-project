@@ -1,5 +1,5 @@
 import { PoolConnection } from 'mysql2/promise';
-import { choice } from '../utils/random';
+import { choice, shuffle } from '../utils/random';
 import { QuestionGenerator } from './base';
 import { cultureQuestion } from './cultureQuestion';
 import { departmentQuestion } from './departmentQuestion';
@@ -29,8 +29,17 @@ export async function generateQuestion(
   connection: PoolConnection,
   preferredType?: string
 ) {
-  const generator = pickGenerator(preferredType);
-  if (!generator) return null;
+  const ordered = preferredType
+    ? [
+        ...generators.filter((g) => g.id === preferredType),
+        ...generators.filter((g) => g.id !== preferredType)
+      ]
+    : shuffle([...generators]);
 
-  return generator.generate({ connection });
+  for (const generator of ordered) {
+    const result = await generator.generate({ connection });
+    if (result) return result;
+  }
+
+  return null;
 }

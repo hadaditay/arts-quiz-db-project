@@ -21,7 +21,12 @@ export async function createRound(
   existingConnection?: PoolConnection
 ): Promise<RoundPayload> {
   const action = async (connection: PoolConnection) => {
-    const generated = await generateQuestion(connection, preferredType);
+    let generated = null;
+    // Retry in case we pick an artwork without images.
+    for (let i = 0; i < 12; i += 1) {
+      generated = await generateQuestion(connection, preferredType);
+      if (generated) break;
+    }
     if (!generated) {
       throw new Error('Unable to generate question');
     }
