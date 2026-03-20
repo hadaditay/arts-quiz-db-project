@@ -95,6 +95,7 @@
   padding: 12px 16px;
   border-radius: 12px;
   font-weight: 700;
+  cursor: pointer;
 }
 
 .secondary {
@@ -104,6 +105,7 @@
   border-radius: 12px;
   color: #0f172a;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .error {

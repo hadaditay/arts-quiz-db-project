@@ -1,4 +1,4 @@
-export type QuestionType = 'department' | 'culture' | 'era' | 'medium';
+export type QuestionType = 'department' | 'culture';
 
 export interface ArtworkRef {
   id: number;
@@ -15,6 +15,7 @@ export interface Option {
 export interface Round {
   roundId: string;
   questionType: QuestionType;
+  requiresImage: boolean;
   prompt: string;
   correctValue: string;
   options: Option[];
@@ -26,11 +27,8 @@ export interface AnswerResponse {
   payload: Round;
 }
 
-export interface LeaderboardEntry {
-  username: string;
-  score: number;
-}
-
 export interface User {
   username: string;
+  firstName?: string;
+  lastName?: string;
 }

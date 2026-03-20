@@ -5,9 +5,7 @@ import { fetchMetArtwork } from '../utils/metApi';
 
 const FIELD_MAP = {
   department: 'department',
-  culture: 'culture',
-  era: 'era_bucket',
-  medium: 'medium'
+  culture: 'culture'
 } as const;
 
 export type ArtworkField = keyof typeof FIELD_MAP;
@@ -17,15 +15,12 @@ const BASE_SELECT = `SELECT
   title,
   department,
   culture,
-  classification,
-  medium,
-  object_begin_year,
-  object_end_year,
-  era_bucket,
+  artist_display_name,
   is_public_domain,
   is_highlight,
   primary_image,
   primary_image_small,
+  image_checked,
   object_url,
   tags
 FROM met_artwork`;
@@ -34,7 +29,6 @@ const parseTags = (value: unknown): string[] | null => {
   if (value === null || value === undefined) return null;
   if (Array.isArray(value)) return value.filter(Boolean) as string[];
   if (typeof value === 'object') {
-    // mysql2 can return JSON columns as objects already; stringify then parse for consistency.
     try {
       return parseTags(JSON.stringify(value));
     } catch {
@@ -62,11 +56,7 @@ function mapArtworkRow(row: RowDataPacket): Artwork {
     title: row.title,
     department: row.department,
     culture: row.culture,
-    classification: row.classification,
-    medium: row.medium,
-    objectBeginYear: row.object_begin_year,
-    objectEndYear: row.object_end_year,
-    eraBucket: row.era_bucket,
+    artistDisplayName: row.artist_display_name,
     isPublicDomain: Boolean(row.is_public_domain),
     isHighlight: Boolean(row.is_highlight),
     primaryImage: row.primary_image,
@@ -76,43 +66,72 @@ function mapArtworkRow(row: RowDataPacket): Artwork {
   };
 }
 
-async function ensureArtworkImages(artwork: Artwork): Promise<Artwork | null> {
-  // If we already have a small image URL, use what we have and skip API fetch.
-  if (artwork.primaryImageSmall) {
-    return artwork;
+function hasImage(row: RowDataPacket): boolean {
+  return Boolean(
+    (typeof row.primary_image_small === 'string' && row.primary_image_small.trim() !== '') ||
+      (typeof row.primary_image === 'string' && row.primary_image.trim() !== '')
+  );
+}
+
+async function hydrateArtworkImage(row: RowDataPacket, connection: PoolConnection): Promise<RowDataPacket> {
+  if (hasImage(row) || Boolean(row.image_checked) || !Boolean(row.is_public_domain)) {
+    return row;
   }
 
-  const apiObject = await fetchMetArtwork(artwork.artworkId);
-  if (!apiObject) return null;
+  const data = await fetchMetArtwork(Number(row.artwork_id));
+  if (!data) {
+    return row;
+  }
 
-  const primaryImageSmall = apiObject.primaryImageSmall || apiObject.primaryImage || null;
-  const primaryImage = artwork.primaryImage || apiObject.primaryImage || apiObject.primaryImageSmall || null;
-  const objectUrl = artwork.objectUrl || apiObject.objectURL || null;
+  const primaryImage = data.primaryImage?.trim() || null;
+  const primaryImageSmall = data.primaryImageSmall?.trim() || null;
+  const objectUrl = data.objectURL?.trim() || row.object_url || null;
+  const imageChecked = 1;
 
-  if (!primaryImageSmall) return null;
+  await connection.query(
+    `UPDATE met_artwork
+     SET primary_image = ?,
+         primary_image_small = ?,
+         object_url = COALESCE(?, object_url),
+         image_checked = ?
+     WHERE artwork_id = ?`,
+    [primaryImage, primaryImageSmall, objectUrl, imageChecked, row.artwork_id]
+  );
 
-  return {
-    ...artwork,
-    primaryImageSmall,
-    primaryImage,
-    objectUrl
-  };
+  row.primary_image = primaryImage;
+  row.primary_image_small = primaryImageSmall;
+  row.object_url = objectUrl;
+  row.image_checked = imageChecked;
+
+  return row;
 }
 
 export async function getRandomArtworkWithField(
   field: ArtworkField,
-  connection: PoolConnection
+  connection: PoolConnection,
+  requireImage = false
 ): Promise<Artwork | null> {
   const column = FIELD_MAP[field];
-  for (let i = 0; i < 20; i += 1) {
-    const [rows] = await connection.query<RowDataPacket[]>(
-      `${BASE_SELECT} WHERE ${column} IS NOT NULL AND ${column} != '' ORDER BY RAND() LIMIT 1`
-    );
-    if (!rows.length) return null;
-    const artwork = mapArtworkRow(rows[0]);
-    const withImages = await ensureArtworkImages(artwork);
-    if (withImages) return withImages;
+  const candidateLimit = requireImage ? 18 : 1;
+
+  const [rows] = await connection.query<RowDataPacket[]>(
+    `${BASE_SELECT}
+     WHERE ${column} IS NOT NULL
+       AND ${column} != ''
+       ${requireImage ? 'AND is_public_domain = 1' : ''}
+     ORDER BY RAND()
+     LIMIT ${candidateLimit}`
+  );
+
+  if (!rows.length) return null;
+
+  for (const row of rows) {
+    const hydrated = requireImage ? await hydrateArtworkImage(row, connection) : row;
+    if (!requireImage || hasImage(hydrated)) {
+      return mapArtworkRow(hydrated);
+    }
   }
+
   return null;
 }
 
@@ -123,8 +142,15 @@ export async function getDistinctFieldValues(
   connection: PoolConnection
 ): Promise<string[]> {
   const column = FIELD_MAP[field];
+
   const [rows] = await connection.query<RowDataPacket[]>(
-    `SELECT DISTINCT ${column} as value FROM met_artwork WHERE ${column} IS NOT NULL AND ${column} != '' AND ${column} != ? ORDER BY RAND() LIMIT ?`,
+    `SELECT DISTINCT ${column} AS value
+     FROM met_artwork
+     WHERE ${column} IS NOT NULL
+       AND ${column} != ''
+       AND ${column} != ?
+     ORDER BY RAND()
+     LIMIT ?`,
     [exclude, limit]
   );
 
@@ -139,9 +165,9 @@ export async function buildOptionsForField(
 ): Promise<QuestionOption[]> {
   const distractorCount = Math.max(totalOptions - 1, 0);
   const distractors = await getDistinctFieldValues(field, correctValue, distractorCount, connection);
-  const options = shuffle([correctValue, ...distractors]).map((value) => ({
+
+  return shuffle([correctValue, ...distractors]).map((value) => ({
     value,
     label: value
   }));
-  return options;
 }

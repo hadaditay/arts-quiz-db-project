@@ -3,14 +3,10 @@ import { choice, shuffle } from '../utils/random';
 import { QuestionGenerator } from './base';
 import { cultureQuestion } from './cultureQuestion';
 import { departmentQuestion } from './departmentQuestion';
-import { eraQuestion } from './eraQuestion';
-import { mediumQuestion } from './mediumQuestion';
 
 const generators: QuestionGenerator[] = [
   departmentQuestion,
-  cultureQuestion,
-  eraQuestion,
-  mediumQuestion
+  cultureQuestion
 ];
 
 export function listQuestionGenerators() {

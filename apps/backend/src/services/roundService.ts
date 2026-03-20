@@ -3,17 +3,20 @@ import { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import { withConnection } from '../db';
 import { generateQuestion } from '../question/registry';
 import { AuthSession, QuestionOption, RoundPayload } from '../types';
-import { addScore } from './userService';
 
 const POINTS_PER_CORRECT = 10;
 
-const parseOptions = (value: any): QuestionOption[] => {
+const parseOptions = (value: unknown): QuestionOption[] => {
   if (!value) return [];
   if (typeof value === 'string') {
     return JSON.parse(value) as QuestionOption[];
   }
   return value as QuestionOption[];
 };
+
+function questionTypeRequiresImage(questionType: string): boolean {
+  return questionType === 'department' || questionType === 'culture';
+}
 
 export async function createRound(
   session: AuthSession,
@@ -22,11 +25,12 @@ export async function createRound(
 ): Promise<RoundPayload> {
   const action = async (connection: PoolConnection) => {
     let generated = null;
-    // Retry in case we pick an artwork without images.
+
     for (let i = 0; i < 12; i += 1) {
       generated = await generateQuestion(connection, preferredType);
       if (generated) break;
     }
+
     if (!generated) {
       throw new Error('Unable to generate question');
     }
@@ -47,7 +51,7 @@ export async function createRound(
       ]
     );
 
-    return { ...generated, roundId } satisfies RoundPayload;
+    return { ...generated, roundId };
   };
 
   if (existingConnection) {
@@ -64,10 +68,9 @@ export async function answerRound(
   existingConnection?: PoolConnection
 ): Promise<{ correct: boolean; payload: RoundPayload }> {
   const action = async (connection: PoolConnection) => {
-    const [rows] = await connection.query<
-      RowDataPacket[]
-    >(
-      `SELECT r.round_id, r.question_type, r.artwork_id, r.prompt, r.correct_value, r.options, r.selected_value, r.result,
+    const [rows] = await connection.query<RowDataPacket[]>(
+      `SELECT r.round_id, r.question_type, r.artwork_id, r.prompt, r.correct_value, r.options,
+              r.selected_value, r.result,
               a.title, a.primary_image, a.primary_image_small
        FROM game_round r
        JOIN game_session s ON s.session_id = r.session_id
@@ -83,23 +86,25 @@ export async function answerRound(
 
     const row = rows[0];
     const alreadyAnswered = row.result !== 'pending';
-    const correct = row.correct_value === selectedValue;
-    const points = correct ? POINTS_PER_CORRECT : 0;
 
     if (!alreadyAnswered) {
+      const correct = row.correct_value === selectedValue;
+      const points = correct ? POINTS_PER_CORRECT : 0;
+
       await connection.query(
-        'UPDATE game_round SET selected_value = ?, result = ?, points_awarded = ? WHERE round_id = ?',
+        `UPDATE game_round
+         SET selected_value = ?, result = ?, points_awarded = ?
+         WHERE round_id = ?`,
         [selectedValue, correct ? 'correct' : 'incorrect', points, roundId]
       );
-
-      if (correct) {
-        await addScore(session.userId, points, connection);
-      }
     }
+
+    const finalCorrect = alreadyAnswered ? row.result === 'correct' : row.correct_value === selectedValue;
 
     const payload: RoundPayload = {
       roundId: row.round_id,
       questionType: row.question_type,
+      requiresImage: questionTypeRequiresImage(row.question_type),
       prompt: row.prompt,
       correctValue: row.correct_value,
       options: parseOptions(row.options),
@@ -111,7 +116,7 @@ export async function answerRound(
       }
     };
 
-    return { correct, payload };
+    return { correct: finalCorrect, payload };
   };
 
   if (existingConnection) {

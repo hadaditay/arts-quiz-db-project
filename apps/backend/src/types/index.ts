@@ -1,15 +1,11 @@
-export type QuestionTypeId = 'department' | 'culture' | 'era' | 'medium';
+export type QuestionTypeId = 'department' | 'culture';
 
 export interface Artwork {
   artworkId: number;
   title: string;
   department: string | null;
   culture: string | null;
-  classification: string | null;
-  medium: string | null;
-  objectBeginYear: number | null;
-  objectEndYear: number | null;
-  eraBucket: string | null;
+  artistDisplayName: string | null;
   isPublicDomain: boolean;
   isHighlight: boolean;
   primaryImage: string | null;
@@ -26,6 +22,7 @@ export interface QuestionOption {
 export interface RoundPayload {
   roundId: string;
   questionType: QuestionTypeId;
+  requiresImage: boolean;
   prompt: string;
   correctValue: string;
   options: QuestionOption[];

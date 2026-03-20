@@ -19,10 +19,7 @@ export async function createSession(
     return { sessionId, userId, username };
   };
 
-  if (conn) {
-    return action(conn);
-  }
-
+  if (conn) return action(conn);
   return withConnection(action);
 }
 
@@ -46,26 +43,33 @@ export async function getSession(
       sessionId: rows[0].session_id,
       userId: rows[0].user_id,
       username: rows[0].username
-    } satisfies AuthSession;
+    };
   };
 
-  if (conn) {
-    return action(conn);
-  }
-
+  if (conn) return action(conn);
   return withConnection(action);
 }
 
 export async function touchSession(sessionId: string, conn?: PoolConnection) {
   const action = async (connection: PoolConnection) => {
-    await connection.query('UPDATE game_session SET last_seen_at = CURRENT_TIMESTAMP WHERE session_id = ?', [
-      sessionId
-    ]);
+    await connection.query(
+      'UPDATE game_session SET last_seen_at = CURRENT_TIMESTAMP WHERE session_id = ?',
+      [sessionId]
+    );
   };
 
-  if (conn) {
-    return action(conn);
-  }
+  if (conn) return action(conn);
+  return withConnection(action);
+}
 
+export async function revokeSession(sessionId: string, conn?: PoolConnection) {
+  const action = async (connection: PoolConnection) => {
+    await connection.query(
+      'UPDATE game_session SET revoked = 1 WHERE session_id = ?',
+      [sessionId]
+    );
+  };
+
+  if (conn) return action(conn);
   return withConnection(action);
 }

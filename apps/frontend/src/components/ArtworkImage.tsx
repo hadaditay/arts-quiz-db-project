@@ -5,9 +5,10 @@ interface Props {
   smallSrc: string | null;
   fullSrc: string | null;
   title: string;
+  required?: boolean;
 }
 
-export function ArtworkImage({ smallSrc, fullSrc, title }: Props) {
+export function ArtworkImage({ smallSrc, fullSrc, title, required = false }: Props) {
   const [displaySrc, setDisplaySrc] = useState<string | null>(smallSrc || fullSrc);
   const [fullReady, setFullReady] = useState(false);
   const [open, setOpen] = useState(false);
@@ -35,6 +36,7 @@ export function ArtworkImage({ smallSrc, fullSrc, title }: Props) {
   };
 
   if (!displaySrc) {
+    if (!required) return null;
     return <div className={styles.placeholder}>No image available for this piece.</div>;
   }
 

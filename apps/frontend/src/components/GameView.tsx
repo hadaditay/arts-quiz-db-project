@@ -6,6 +6,7 @@ import styles from './GameView.module.css';
 
 interface Props {
   user: User;
+  onExit: () => void;
 }
 
 interface ResultState {
@@ -13,13 +14,22 @@ interface ResultState {
   selected: string;
 }
 
-export function GameView({ user }: Props) {
+export function GameView({ user, onExit }: Props) {
   const [round, setRound] = useState<Round | null>(null);
   const [prefetched, setPrefetched] = useState<Round | null>(null);
   const [loading, setLoading] = useState(false);
   const [answering, setAnswering] = useState(false);
   const [result, setResult] = useState<ResultState | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const prefetchNextRound = async () => {
+    try {
+      const next = await api.nextRound();
+      setPrefetched(next);
+    } catch (err) {
+      console.warn('Next round prefetch failed', err);
+    }
+  };
 
   const loadRound = async (initial = false) => {
     setLoading(true);
@@ -36,15 +46,6 @@ export function GameView({ user }: Props) {
       setError(err instanceof Error ? err.message : 'Failed to load round');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const prefetchNextRound = async () => {
-    try {
-      const next = await api.nextRound();
-      setPrefetched(next);
-    } catch (err) {
-      console.warn('Next round prefetch failed', err);
     }
   };
 
@@ -68,7 +69,7 @@ export function GameView({ user }: Props) {
     }
   };
 
-  const showNext = () => loadRound();
+  const handleSkip = () => loadRound();
 
   if (loading && !round) {
     return <div>Loading your first round…</div>;
@@ -78,12 +79,19 @@ export function GameView({ user }: Props) {
     return (
       <div>
         <p>No round available yet.</p>
-        <button className={styles.primary} onClick={() => loadRound()}>
-          Try again
-        </button>
+        <div className={styles.actions}>
+          <button className={styles.secondary} onClick={onExit}>
+            Exit
+          </button>
+          <button className={styles.primary} onClick={() => loadRound()}>
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
+
+  const shouldShowImage = round.requiresImage || !!round.artwork.primaryImage || !!round.artwork.primaryImageSmall;
 
   return (
     <div className={styles.container}>
@@ -95,11 +103,14 @@ export function GameView({ user }: Props) {
         <div className={styles.userBadge}>Playing as {user.username}</div>
       </div>
 
-      <ArtworkImage
-        smallSrc={round.artwork.primaryImageSmall}
-        fullSrc={round.artwork.primaryImage}
-        title={round.artwork.title}
-      />
+      {shouldShowImage ? (
+        <ArtworkImage
+          smallSrc={round.artwork.primaryImageSmall}
+          fullSrc={round.artwork.primaryImage}
+          title={round.artwork.title}
+          required={round.requiresImage}
+        />
+      ) : null}
 
       <div className={styles.options}>
         {round.options.map((option) => {
@@ -132,11 +143,11 @@ export function GameView({ user }: Props) {
       {error ? <div className={styles.error}>{error}</div> : null}
 
       <div className={styles.actions}>
-        <button className={styles.secondary} onClick={() => loadRound()} disabled={loading}>
-          Skip
+        <button className={styles.secondary} onClick={onExit} disabled={loading || answering}>
+          Exit
         </button>
-        <button className={styles.primary} onClick={showNext} disabled={loading || answering}>
-          {result ? 'Next question' : 'New question'}
+        <button className={styles.primary} onClick={handleSkip} disabled={loading || answering}>
+          Skip
         </button>
       </div>
     </div>

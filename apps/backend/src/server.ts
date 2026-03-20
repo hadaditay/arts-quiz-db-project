@@ -3,7 +3,6 @@ import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import { config } from './config';
 import { authRoutes } from './routes/auth';
-import { leaderboardRoutes } from './routes/leaderboard';
 import { roundRoutes } from './routes/rounds';
 import { getSession, touchSession } from './services/sessionService';
 
@@ -35,7 +34,6 @@ app.addHook('preHandler', async (request) => {
 
 app.register(authRoutes);
 app.register(roundRoutes);
-app.register(leaderboardRoutes);
 
 app.get('/health', async () => ({ status: 'ok' }));
 

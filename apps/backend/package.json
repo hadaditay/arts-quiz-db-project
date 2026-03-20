@@ -10,7 +10,9 @@
     "start": "node --experimental-specifier-resolution=node dist/server.js",
     "lint": "eslint src --ext .ts",
     "test": "vitest",
-    "etl": "tsx src/etl/importMet.ts"
+    "etl": "npm run etl:artists && npm run etl:artworks",
+    "etl:artists": "tsx src/etl/importMetArtists.ts",
+    "etl:artworks": "tsx src/etl/importMet.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^9.3.1",

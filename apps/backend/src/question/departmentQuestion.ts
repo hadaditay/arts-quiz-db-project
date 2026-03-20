@@ -6,13 +6,14 @@ export const departmentQuestion: QuestionGenerator = {
   id: 'department',
   label: 'Department',
   async generate({ connection }: QuestionContext) {
-    const artwork = await getRandomArtworkWithField('department', connection);
+    const artwork = await getRandomArtworkWithField('department', connection, true);
     if (!artwork || !artwork.department) return null;
 
     const options = await buildOptionsForField('department', artwork.department, connection);
 
     const payload: GeneratedQuestion = {
       questionType: 'department',
+      requiresImage: true,
       prompt: 'Which department holds this artwork?',
       correctValue: artwork.department,
       options,
