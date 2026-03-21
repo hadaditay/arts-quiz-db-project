@@ -42,7 +42,7 @@ export function ArtworkImage({ smallSrc, fullSrc, title, required = false }: Pro
 
   return (
     <div className={styles.container}>
-      <div className={styles.imageWrap}>
+      <div className={styles.imageWrap} onClick={() => { if (fullSrc) { setZoom(1); setOpen(true); } }}>
         <img src={displaySrc} alt={title} className={styles.image} />
       </div>
       <div className={styles.imageFooter}>
@@ -50,7 +50,7 @@ export function ArtworkImage({ smallSrc, fullSrc, title, required = false }: Pro
         <div className={styles.actions}>
           {!fullReady && fullSrc ? <span className={styles.subtle}>Loading HD…</span> : null}
           {fullSrc ? (
-            <button className={styles.button} onClick={() => setOpen(true)}>
+            <button className={styles.button} onClick={() => { setZoom(1); setOpen(true); }}>
               View full screen
             </button>
           ) : null}

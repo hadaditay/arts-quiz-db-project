@@ -147,7 +147,7 @@ export function GameView({ user, onExit }: Props) {
           Exit
         </button>
         <button className={styles.primary} onClick={handleSkip} disabled={loading || answering}>
-          Skip
+          Next
         </button>
       </div>
     </div>

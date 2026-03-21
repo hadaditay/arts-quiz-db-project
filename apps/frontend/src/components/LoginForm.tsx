@@ -73,11 +73,10 @@ export function LoginForm({ onLogin, onRegister }: Props) {
           : 'Choose your username, password, first name and last name'}
       </p>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <div className={styles.tabs}>
         <button
           type="button"
-          className={styles.button}
-          style={{ opacity: mode === 'login' ? 1 : 0.7 }}
+          className={`${styles.tab} ${mode === 'login' ? styles.tabActive : ''}`}
           onClick={() => {
             setMode('login');
             setError(null);
@@ -87,8 +86,7 @@ export function LoginForm({ onLogin, onRegister }: Props) {
         </button>
         <button
           type="button"
-          className={styles.button}
-          style={{ opacity: mode === 'register' ? 1 : 0.7 }}
+          className={`${styles.tab} ${mode === 'register' ? styles.tabActive : ''}`}
           onClick={() => {
             setMode('register');
             setError(null);
