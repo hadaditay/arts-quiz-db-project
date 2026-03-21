@@ -155,34 +155,23 @@ export async function sommelierPick(artworkId: number, connection?: Conn) {
   return useConn(connection, async (conn) => {
     const [rows] = await conn.query<RowDataPacket[]>(
       `SELECT
-          wine_picks.variety,
-          wine_picks.winery,
-          wine_picks.avg_points,
-          wine_picks.country,
-          wine_picks.price_range
-      FROM (
-          SELECT
-              w.variety,
-              w.winery,
-              ROUND(AVG(w.points), 1) AS avg_points,
-              w.country,
-              CONCAT('$', MIN(w.price), ' - $', MAX(w.price)) AS price_range,
-              COUNT(*) AS review_count
-          FROM wine w
-          JOIN country c ON c.country_name = w.country
-          JOIN culture_country cc ON cc.country_id = c.country_id
-          JOIN met_artwork ma ON ma.culture = cc.culture_value
-          JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
-          WHERE awp.period_id IN (
-              SELECT awp_target.period_id
-              FROM artwork_period awp_target
-              WHERE awp_target.artwork_id = ?
-          )
-            AND w.price IS NOT NULL
-          GROUP BY w.variety, w.winery, w.country
-          HAVING COUNT(*) >= 3
-      ) AS wine_picks
-      ORDER BY wine_picks.avg_points DESC
+          w.variety,
+          w.winery,
+          ROUND(AVG(w.points), 1) AS avg_points,
+          w.country,
+          CONCAT('$', MIN(w.price), ' - $', MAX(w.price)) AS price_range
+      FROM wine w
+      JOIN (
+          SELECT DISTINCT c.country_name
+          FROM met_artwork ma
+          JOIN culture_country cc ON cc.culture_value = ma.culture
+          JOIN country c ON c.country_id = cc.country_id
+          WHERE ma.artwork_id = ?
+      ) ac ON ac.country_name = w.country
+      WHERE w.price IS NOT NULL
+      GROUP BY w.variety, w.winery, w.country
+      HAVING COUNT(*) >= 3
+      ORDER BY avg_points DESC
       LIMIT 4`,
       [artworkId]
     );
@@ -501,7 +490,7 @@ export async function warFromArtwork(artworkId: number, connection?: Conn) {
               wb.start_year,
               wb.end_year,
               wb.description,
-              LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1
+              MAX(LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1)
                   AS overlap_years
           FROM met_artwork ma
           JOIN culture_country cc ON cc.culture_value = ma.culture
@@ -514,8 +503,7 @@ export async function warFromArtwork(artworkId: number, connection?: Conn) {
               AND wb.end_year >= ap.start_year
           WHERE ma.artwork_id = ?
           GROUP BY wb.war_id, wb.war_name, wb.war_type, wb.start_year, wb.end_year,
-                   wb.description, ap.end_year, ap.start_year
-          HAVING LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1 >= 1
+                   wb.description
       ) AS matches
       ORDER BY matches.overlap_years DESC
       LIMIT 4`,

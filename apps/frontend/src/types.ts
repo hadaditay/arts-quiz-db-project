@@ -25,6 +25,7 @@ export interface Round {
 // --- Answer Enrichment Types ---
 
 export interface ArtworkContext {
+  title: string | null;
   artistName: string | null;
   culture: string | null;
   department: string | null;
@@ -65,6 +66,7 @@ export interface FoodPairingContext {
 
 export interface DepartmentEnrichment {
   type: 'department';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   artist: ArtistContext | null;
   periods: PeriodContext[];
@@ -73,6 +75,7 @@ export interface DepartmentEnrichment {
 
 export interface CultureEnrichment {
   type: 'culture';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   artist: ArtistContext | null;
   country: { countryName: string; continent: string } | null;
@@ -82,6 +85,7 @@ export interface CultureEnrichment {
 
 export interface WineRegionEnrichment {
   type: 'wine_region';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   regions: Array<{ province: string; avgPoints: number; wineCount: number; topVariety: string }>;
   countryName: string | null;
@@ -89,6 +93,7 @@ export interface WineRegionEnrichment {
 
 export interface FoodPairingEnrichment {
   type: 'food_pairing';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   pairings: FoodPairingContext[];
   countryName: string | null;
@@ -96,6 +101,7 @@ export interface FoodPairingEnrichment {
 
 export interface ArtPeriodEnrichment {
   type: 'art_period';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   artist: ArtistContext | null;
   period: PeriodContext | null;
@@ -104,6 +110,7 @@ export interface ArtPeriodEnrichment {
 
 export interface SommelierEnrichment {
   type: 'sommelier';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   period: PeriodContext | null;
   topWines: WineHighlight[];
@@ -111,6 +118,7 @@ export interface SommelierEnrichment {
 
 export interface SensoryEnrichment {
   type: 'sensory';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   period: PeriodContext | null;
   wine: WineHighlight | null;
@@ -131,6 +139,7 @@ export interface WarContext {
 
 export interface WarConflictEnrichment {
   type: 'war_conflict';
+  connectionTrail: string[];
   artwork: ArtworkContext;
   artist: ArtistContext | null;
   period: PeriodContext | null;

@@ -24,7 +24,17 @@
       "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/wine-art-country)",
       "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/cross-period-artists)",
       "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/period-leaderboard)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(curl -s http://localhost:4000/api/analytics/art-born-in-conflict)",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SHOW TABLES LIKE ''war_battle'';\")",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \":*)",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SELECT COUNT\\(*\\) AS total_wars FROM war_battle; SELECT war_type, COUNT\\(*\\) AS cnt FROM war_battle GROUP BY war_type;\")",
+      "Bash(curl -s http://localhost:4000/api/health)",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS: %{http_code}\\\\n\" http://localhost:4000/api/rounds/next -H \"Content-Type: application/json\")",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SHOW INDEX FROM war_battle;\")",
+      "Bash(time mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \":*)",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"CREATE INDEX idx_wfp_variety ON wine_food_pairing \\(variety\\);\")",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SELECT question_type, COUNT\\(*\\) FROM game_round GROUP BY question_type ORDER BY COUNT\\(*\\) DESC;\")"
     ]
   }
 }

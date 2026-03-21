@@ -9,7 +9,7 @@ export const warConflictQuestion: QuestionGenerator = {
   id: 'war_conflict',
   label: 'War & Conflict',
   async generate({ connection }: QuestionContext) {
-    const artwork = await getRandomMappedArtwork(connection);
+    const artwork = await getRandomMappedArtwork(connection, true);
     if (!artwork) return null;
 
     const results = await warFromArtwork(artwork.artworkId, connection);

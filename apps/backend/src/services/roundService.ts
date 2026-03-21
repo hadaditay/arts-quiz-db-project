@@ -16,7 +16,7 @@ const parseOptions = (value: unknown): QuestionOption[] => {
 };
 
 function questionTypeRequiresImage(questionType: string): boolean {
-  return ['department', 'culture', 'wine_region', 'food_pairing', 'art_period', 'sommelier', 'sensory'].includes(questionType);
+  return ['department', 'culture', 'wine_region', 'food_pairing', 'art_period', 'sommelier', 'sensory', 'war_conflict'].includes(questionType);
 }
 
 export async function createRound(

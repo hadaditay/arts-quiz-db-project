@@ -7,6 +7,17 @@ import styles from './GameView.module.css';
 
 const ROUNDS_PER_SESSION = 15;
 
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  department: 'Department',
+  culture: 'Culture',
+  wine_region: 'Wine Region',
+  food_pairing: 'Food Pairing',
+  art_period: 'Art Period',
+  sommelier: 'Sommelier',
+  sensory: 'Sensory',
+  war_conflict: 'War & Conflict'
+};
+
 export interface SessionResult {
   totalRounds: number;
   correctCount: number;
@@ -133,7 +144,7 @@ export function GameView({ user, onExit, onSessionEnd }: Props) {
     <div className={styles.container}>
       <div className={styles.promptHeader}>
         <div>
-          <p className={styles.subtle}>Question type: {round.questionType}</p>
+          <p className={styles.subtle}>Question type: {QUESTION_TYPE_LABELS[round.questionType] ?? round.questionType}</p>
           <h2 className={styles.prompt}>{round.prompt}</h2>
         </div>
         <div className={styles.headerRight}>

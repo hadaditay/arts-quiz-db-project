@@ -7,6 +7,20 @@ import {
 } from '../types';
 import styles from './EnrichmentPanel.module.css';
 
+function ConnectionTrail({ steps }: { steps?: string[] }) {
+  if (!steps?.length) return null;
+  return (
+    <div className={styles.trail}>
+      {steps.map((step, i) => (
+        <span key={i}>
+          {i > 0 && <span className={styles.trailArrow}>{'\u2192'}</span>}
+          <span className={styles.trailStep}>{step}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 interface Props {
   enrichment: AnswerEnrichment;
 }
@@ -27,6 +41,9 @@ function ArtworkInfo({ artwork, artist }: { artwork: ArtworkContext; artist?: Ar
 
   return (
     <div>
+      {artwork.title && (
+        <p className={styles.artworkTitle}>{artwork.title}</p>
+      )}
       {parts.length > 0 && (
         <p className={styles.narrative}>
           <strong>{parts.join(' \u00b7 ')}</strong>
@@ -56,10 +73,11 @@ function PeriodBadges({ periods }: { periods: PeriodContext[] }) {
 }
 
 function DepartmentContent({ e }: { e: Extract<AnswerEnrichment, { type: 'department' }> }) {
-  const { artwork, artist, periods, departmentStats } = e;
+  const { artwork, artist, periods, departmentStats, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} artist={artist} />
+      <ConnectionTrail steps={connectionTrail} />
       {periods.length > 0 && (
         <div>
           <p className={styles.sectionLabel}>Art Period</p>
@@ -82,10 +100,11 @@ function DepartmentContent({ e }: { e: Extract<AnswerEnrichment, { type: 'depart
 }
 
 function CultureContent({ e }: { e: Extract<AnswerEnrichment, { type: 'culture' }> }) {
-  const { artwork, artist, country, cultureArtworkCount, notableWineVariety } = e;
+  const { artwork, artist, country, cultureArtworkCount, notableWineVariety, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} artist={artist} />
+      <ConnectionTrail steps={connectionTrail} />
       {country && <span className={styles.badge}>{country.continent}</span>}
       {cultureArtworkCount > 0 && (
         <p className={styles.narrative}>
@@ -104,10 +123,11 @@ function CultureContent({ e }: { e: Extract<AnswerEnrichment, { type: 'culture' 
 }
 
 function WineRegionContent({ e }: { e: Extract<AnswerEnrichment, { type: 'wine_region' }> }) {
-  const { artwork, regions, countryName } = e;
+  const { artwork, regions, countryName, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} />
+      <ConnectionTrail steps={connectionTrail} />
       {countryName && (
         <p className={styles.sectionLabel}>Wine Regions of {countryName}</p>
       )}
@@ -127,10 +147,11 @@ function WineRegionContent({ e }: { e: Extract<AnswerEnrichment, { type: 'wine_r
 }
 
 function FoodPairingContent({ e }: { e: Extract<AnswerEnrichment, { type: 'food_pairing' }> }) {
-  const { artwork, pairings, countryName } = e;
+  const { artwork, pairings, countryName, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} />
+      <ConnectionTrail steps={connectionTrail} />
       {countryName && (
         <p className={styles.sectionLabel}>Culinary connections from {countryName}</p>
       )}
@@ -150,10 +171,11 @@ function FoodPairingContent({ e }: { e: Extract<AnswerEnrichment, { type: 'food_
 }
 
 function ArtPeriodContent({ e }: { e: Extract<AnswerEnrichment, { type: 'art_period' }> }) {
-  const { artwork, artist, period, siblingPeriods } = e;
+  const { artwork, artist, period, siblingPeriods, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} artist={artist} />
+      <ConnectionTrail steps={connectionTrail} />
       {period && (
         <div>
           <p className={styles.sectionLabel}>{period.periodName}</p>
@@ -182,10 +204,11 @@ function ArtPeriodContent({ e }: { e: Extract<AnswerEnrichment, { type: 'art_per
 }
 
 function SommelierContent({ e }: { e: Extract<AnswerEnrichment, { type: 'sommelier' }> }) {
-  const { artwork, period, topWines } = e;
+  const { artwork, period, topWines, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} />
+      <ConnectionTrail steps={connectionTrail} />
       {period && (
         <p className={styles.narrative}>
           Wines to complement the <strong>{period.periodName}</strong> era ({period.startYear}&ndash;{period.endYear}):
@@ -207,10 +230,11 @@ function SommelierContent({ e }: { e: Extract<AnswerEnrichment, { type: 'sommeli
 }
 
 function SensoryContent({ e }: { e: Extract<AnswerEnrichment, { type: 'sensory' }> }) {
-  const { artwork, period, wine, foodPairing, countryName } = e;
+  const { artwork, period, wine, foodPairing, countryName, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} />
+      <ConnectionTrail steps={connectionTrail} />
       <p className={styles.sectionLabel}>The Full Experience</p>
       {period && <span className={styles.badge}>{period.periodName} ({period.startYear}&ndash;{period.endYear})</span>}
       {countryName && <span className={styles.badge}>{countryName}</span>}
@@ -237,10 +261,11 @@ function SensoryContent({ e }: { e: Extract<AnswerEnrichment, { type: 'sensory' 
 }
 
 function WarConflictContent({ e }: { e: Extract<AnswerEnrichment, { type: 'war_conflict' }> }) {
-  const { artwork, artist, period, war, siblingConflicts } = e;
+  const { artwork, artist, period, war, siblingConflicts, connectionTrail } = e;
   return (
     <>
       <ArtworkInfo artwork={artwork} artist={artist} />
+      <ConnectionTrail steps={connectionTrail} />
       {period && (
         <div>
           <span className={styles.badge}>{period.periodName} ({period.startYear}&ndash;{period.endYear})</span>

@@ -26,3 +26,9 @@ CREATE INDEX idx_ground_artwork ON game_round (artwork_id);
 
 -- game_round: points for leaderboard (Q10)
 CREATE INDEX idx_ground_points ON game_round (points_awarded);
+
+-- war_battle: country join for war-from-artwork queries (Q13)
+CREATE INDEX idx_war_country ON war_battle (country_name);
+
+-- war_battle: temporal overlap filter (Q13, Q14)
+CREATE INDEX idx_war_years ON war_battle (start_year, end_year);

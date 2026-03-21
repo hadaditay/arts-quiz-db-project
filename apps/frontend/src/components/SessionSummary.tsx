@@ -18,7 +18,8 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   food_pairing: 'Food Pairing',
   art_period: 'Art Period',
   sommelier: 'Sommelier',
-  sensory: 'Sensory'
+  sensory: 'Sensory',
+  war_conflict: 'War & Conflict'
 };
 
 export function SessionSummary({ result, username, onPlayAgain, onHome }: Props) {

@@ -26,7 +26,7 @@ async function useConn<T>(existing: Conn | undefined, fn: (c: Conn) => Promise<T
 
 async function getArtworkContext(artworkId: number, conn: Conn): Promise<ArtworkContext | null> {
   const [rows] = await conn.query<RowDataPacket[]>(
-    `SELECT artist_display_name, culture, department, is_highlight, object_url, tags
+    `SELECT title, artist_display_name, culture, department, is_highlight, object_url, tags
      FROM met_artwork WHERE artwork_id = ? LIMIT 1`,
     [artworkId]
   );
@@ -37,6 +37,7 @@ async function getArtworkContext(artworkId: number, conn: Conn): Promise<Artwork
     try { tags = typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags; } catch { tags = null; }
   }
   return {
+    title: r.title ?? null,
     artistName: r.artist_display_name ?? null,
     culture: r.culture ?? null,
     department: r.department ?? null,
@@ -132,7 +133,11 @@ async function enrichDepartment(artworkId: number, conn: Conn): Promise<AnswerEn
     }
   }
 
-  return { type: 'department', artwork: artwork!, artist, periods, departmentStats };
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (artwork?.department) trail.push(artwork.department);
+
+  return { type: 'department', connectionTrail: trail, artwork: artwork!, artist, periods, departmentStats };
 }
 
 async function enrichCulture(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
@@ -160,7 +165,12 @@ async function enrichCulture(artworkId: number, conn: Conn): Promise<AnswerEnric
     notableWineVariety = rows[0].notable_wine_variety ?? null;
   }
 
-  return { type: 'culture', artwork: artwork!, artist, country, cultureArtworkCount, notableWineVariety };
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (artwork?.culture) trail.push(artwork.culture);
+  if (country) trail.push(country.countryName);
+
+  return { type: 'culture', connectionTrail: trail, artwork: artwork!, artist, country, cultureArtworkCount, notableWineVariety };
 }
 
 async function enrichWineRegion(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
@@ -177,7 +187,13 @@ async function enrichWineRegion(artworkId: number, conn: Conn): Promise<AnswerEn
     topVariety: r.top_variety
   }));
 
-  return { type: 'wine_region', artwork: artwork!, regions, countryName: countryInfo?.countryName ?? null };
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (artwork?.culture) trail.push(artwork.culture);
+  if (countryInfo) trail.push(countryInfo.countryName);
+  if (regions.length) trail.push(regions[0].province);
+
+  return { type: 'wine_region', connectionTrail: trail, artwork: artwork!, regions, countryName: countryInfo?.countryName ?? null };
 }
 
 async function enrichFoodPairing(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
@@ -194,7 +210,13 @@ async function enrichFoodPairing(artworkId: number, conn: Conn): Promise<AnswerE
     avgWinePoints: Number(r.avg_wine_points)
   }));
 
-  return { type: 'food_pairing', artwork: artwork!, pairings, countryName: countryInfo?.countryName ?? null };
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (artwork?.culture) trail.push(artwork.culture);
+  if (countryInfo) trail.push(countryInfo.countryName);
+  if (pairings.length) trail.push(`${pairings[0].foodName} + ${pairings[0].variety}`);
+
+  return { type: 'food_pairing', connectionTrail: trail, artwork: artwork!, pairings, countryName: countryInfo?.countryName ?? null };
 }
 
 async function enrichArtPeriod(artworkId: number, correctValue: string, conn: Conn): Promise<AnswerEnrichment> {
@@ -217,7 +239,12 @@ async function enrichArtPeriod(artworkId: number, correctValue: string, conn: Co
       artworkCount: Number(r.artwork_count)
     }));
 
-  return { type: 'art_period', artwork: artwork!, artist, period, siblingPeriods };
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (artwork?.culture) trail.push(artwork.culture);
+  if (period) trail.push(`${period.periodName} (${period.startYear}\u2013${period.endYear})`);
+
+  return { type: 'art_period', connectionTrail: trail, artwork: artwork!, artist, period, siblingPeriods };
 }
 
 async function enrichSommelier(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
@@ -235,7 +262,13 @@ async function enrichSommelier(artworkId: number, conn: Conn): Promise<AnswerEnr
     priceRange: r.price_range ?? null
   }));
 
-  return { type: 'sommelier', artwork: artwork!, period: periods[0] ?? null, topWines };
+  const p = periods[0] ?? null;
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (p) trail.push(p.periodName);
+  if (topWines.length) trail.push(topWines[0].variety);
+
+  return { type: 'sommelier', connectionTrail: trail, artwork: artwork!, period: p, topWines };
 }
 
 async function enrichSensory(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
@@ -248,10 +281,17 @@ async function enrichSensory(artworkId: number, conn: Conn): Promise<AnswerEnric
 
   const top = sensoryRows[0] as RowDataPacket | undefined;
 
+  const p = periods[0] ?? null;
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (p) trail.push(p.periodName);
+  if (top) trail.push(`${top.variety} + ${top.food_name}`);
+
   return {
     type: 'sensory',
+    connectionTrail: trail,
     artwork: artwork!,
-    period: periods[0] ?? null,
+    period: p,
     wine: top ? {
       variety: top.variety,
       winery: '',
@@ -324,8 +364,15 @@ async function enrichWarConflict(artworkId: number, correctValue: string, conn: 
     endYear: Number(r.end_year)
   }));
 
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (artwork?.culture) trail.push(artwork.culture);
+  if (war.countryName) trail.push(war.countryName);
+  trail.push(`${war.warName} (${war.startYear}\u2013${war.endYear})`);
+
   return {
     type: 'war_conflict',
+    connectionTrail: trail,
     artwork: artwork!,
     artist,
     period: periods[0] ?? null,
