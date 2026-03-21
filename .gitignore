@@ -213,7 +213,7 @@ data/wines/*
 # Node / JS
 node_modules/
 pnpm-lock.yaml
-package-lock.json
+# package-lock.json — keep tracked for reproducible installs
 dist/
 build/
 .turbo/
