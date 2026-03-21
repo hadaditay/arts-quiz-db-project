@@ -23,7 +23,8 @@
       "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/department-diversity)",
       "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/wine-art-country)",
       "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/cross-period-artists)",
-      "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/period-leaderboard)"
+      "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/period-leaderboard)",
+      "Bash(git mv:*)"
     ]
   }
 }

@@ -93,7 +93,7 @@ async function loadCsv(filePath: string) {
 async function main() {
   const csvPath = config.metCsvPath;
   if (!fs.existsSync(csvPath)) {
-    console.error(`CSV not found at ${csvPath}. Update MET_CSV_PATH or place the file at Data/met/MetObjects_update.csv.`);
+    console.error(`CSV not found at ${csvPath}. Update MET_CSV_PATH or place the file at data/met/MetObjects_update.csv.`);
     process.exit(1);
   }
 

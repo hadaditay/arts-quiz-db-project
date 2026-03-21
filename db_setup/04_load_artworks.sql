@@ -1,6 +1,6 @@
 USE curators_eye;
 
-LOAD DATA LOCAL INFILE 'Data/met/MetObjects_update.csv'
+LOAD DATA LOCAL INFILE 'data/met/MetObjects_update.csv'
 INTO TABLE met_artwork
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ','

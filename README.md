@@ -22,9 +22,10 @@ Both current question types require an image. The backend only selects artworks 
 ## Project layout
 - `apps/backend` — backend API and ETL scripts
 - `apps/frontend` — frontend application
-- `Data/met/MetObjects_update.csv` — artworks CSV
-- `Data/met/met_artists.csv` — artists CSV
-- `Data/users_data.csv` — initial users CSV
+- `data/met/` — Met museum CSVs (artworks, artists)
+- `data/wines/` — wine reviews and food pairing CSVs
+- `data/historical/` — art periods, countries, wars/battles CSVs
+- `data/users/` — user data CSV and generator script
 - `apps/backend/db/schema.sql` — MySQL schema
 - `db_setup/` — SQL setup / load scripts
 

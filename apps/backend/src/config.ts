@@ -30,11 +30,11 @@ export const config = {
   },
   metCsvPath:
     process.env.MET_CSV_PATH ||
-    path.resolve(process.cwd(), '../../Data/met/MetObjects_update.csv'),
+    path.resolve(process.cwd(), '../../data/met/MetObjects_update.csv'),
   artistsCsvPath:
     process.env.MET_ARTISTS_CSV_PATH ||
-    path.resolve(process.cwd(), '../../Data/met/met_artists.csv'),
+    path.resolve(process.cwd(), '../../data/met/met_artists.csv'),
   usersCsvPath:
     process.env.USERS_CSV_PATH ||
-    path.resolve(process.cwd(), '../../Data/users_data.csv')
+    path.resolve(process.cwd(), '../../data/users/users_data.csv')
 };

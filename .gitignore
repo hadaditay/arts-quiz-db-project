@@ -207,7 +207,8 @@ marimo/_lsp/
 __marimo__/
 
 # Large data files (downloaded from Kaggle)
-data/wines/
+data/wines/*
+!data/wines/wine_food_pairings.csv
 
 # Node / JS
 node_modules/

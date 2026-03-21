@@ -1,6 +1,6 @@
 USE curators_eye;
 
-LOAD DATA LOCAL INFILE 'data/art_periods.csv'
+LOAD DATA LOCAL INFILE 'data/historical/art_periods.csv'
 INTO TABLE art_period
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ','

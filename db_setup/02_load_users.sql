@@ -1,6 +1,6 @@
 USE curators_eye;
 
-LOAD DATA LOCAL INFILE 'Data/users_data.csv'
+LOAD DATA LOCAL INFILE 'data/users/users_data.csv'
 INTO TABLE game_user
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'

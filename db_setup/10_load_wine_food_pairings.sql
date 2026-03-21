@@ -1,6 +1,6 @@
 USE curators_eye;
 
-LOAD DATA LOCAL INFILE 'data/wine_food_pairings.csv'
+LOAD DATA LOCAL INFILE 'data/wines/wine_food_pairings.csv'
 INTO TABLE wine_food_pairing
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ','
