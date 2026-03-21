@@ -29,6 +29,20 @@
   line-height: 1.3;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roundCounter {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.04em;
+}
+
 .userBadge {
   background: var(--accent-gold-glow);
   color: var(--accent-gold);

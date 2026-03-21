@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import styles from './ArtworkImage.module.css';
 
 interface Props {
@@ -9,18 +9,35 @@ interface Props {
 }
 
 export function ArtworkImage({ smallSrc, fullSrc, title, required = false }: Props) {
-  const [displaySrc, setDisplaySrc] = useState<string | null>(smallSrc || fullSrc);
+  const [displaySrc, setDisplaySrc] = useState<string | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [fullReady, setFullReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const loadIdRef = useRef(0);
 
   useEffect(() => {
-    setDisplaySrc(smallSrc || fullSrc);
+    const loadId = ++loadIdRef.current;
+    setImageLoaded(false);
     setFullReady(false);
+    setDisplaySrc(null);
+
+    const initialSrc = smallSrc || fullSrc;
+    if (!initialSrc) return;
+
+    const img = new Image();
+    img.src = initialSrc;
+    img.onload = () => {
+      if (loadId !== loadIdRef.current) return;
+      setDisplaySrc(initialSrc);
+      setImageLoaded(true);
+    };
+
     if (fullSrc && fullSrc !== smallSrc) {
-      const img = new Image();
-      img.src = fullSrc;
-      img.onload = () => {
+      const full = new Image();
+      full.src = fullSrc;
+      full.onload = () => {
+        if (loadId !== loadIdRef.current) return;
         setFullReady(true);
         setDisplaySrc(fullSrc);
       };
@@ -34,6 +51,15 @@ export function ArtworkImage({ smallSrc, fullSrc, title, required = false }: Pro
       return Math.min(4, Math.max(0.6, next));
     });
   };
+
+  if (!displaySrc && !imageLoaded) {
+    const hasSrc = smallSrc || fullSrc;
+    if (!hasSrc) {
+      if (!required) return null;
+      return <div className={styles.placeholder}>No image available for this piece.</div>;
+    }
+    return <div className={styles.placeholder}>Loading artwork...</div>;
+  }
 
   if (!displaySrc) {
     if (!required) return null;

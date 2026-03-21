@@ -41,3 +41,108 @@ export interface AuthSession {
   userId: number;
   username: string;
 }
+
+// --- Answer Enrichment Types ---
+
+export interface ArtworkContext {
+  artistName: string | null;
+  culture: string | null;
+  department: string | null;
+  isHighlight: boolean;
+  objectUrl: string | null;
+  tags: string[] | null;
+}
+
+export interface ArtistContext {
+  fullName: string;
+  bio: string | null;
+  birthYear: number | null;
+  deathYear: number | null;
+}
+
+export interface PeriodContext {
+  periodName: string;
+  region: string;
+  startYear: number;
+  endYear: number;
+  artworkCount: number;
+}
+
+export interface WineHighlight {
+  variety: string;
+  winery: string;
+  avgPoints: number;
+  country: string;
+  priceRange: string | null;
+}
+
+export interface FoodPairingContext {
+  foodName: string;
+  cuisineRegion: string;
+  variety: string;
+  avgWinePoints: number;
+}
+
+export interface DepartmentEnrichment {
+  type: 'department';
+  artwork: ArtworkContext;
+  artist: ArtistContext | null;
+  periods: PeriodContext[];
+  departmentStats: { totalArtworks: number; countryCount: number; topCountry: string | null };
+}
+
+export interface CultureEnrichment {
+  type: 'culture';
+  artwork: ArtworkContext;
+  artist: ArtistContext | null;
+  country: { countryName: string; continent: string } | null;
+  cultureArtworkCount: number;
+  notableWineVariety: string | null;
+}
+
+export interface WineRegionEnrichment {
+  type: 'wine_region';
+  artwork: ArtworkContext;
+  regions: Array<{ province: string; avgPoints: number; wineCount: number; topVariety: string }>;
+  countryName: string | null;
+}
+
+export interface FoodPairingEnrichment {
+  type: 'food_pairing';
+  artwork: ArtworkContext;
+  pairings: FoodPairingContext[];
+  countryName: string | null;
+}
+
+export interface ArtPeriodEnrichment {
+  type: 'art_period';
+  artwork: ArtworkContext;
+  artist: ArtistContext | null;
+  period: PeriodContext | null;
+  siblingPeriods: PeriodContext[];
+}
+
+export interface SommelierEnrichment {
+  type: 'sommelier';
+  artwork: ArtworkContext;
+  period: PeriodContext | null;
+  topWines: WineHighlight[];
+}
+
+export interface SensoryEnrichment {
+  type: 'sensory';
+  artwork: ArtworkContext;
+  period: PeriodContext | null;
+  wine: WineHighlight | null;
+  foodPairing: FoodPairingContext | null;
+  countryName: string | null;
+}
+
+export type AnswerEnrichment =
+  | DepartmentEnrichment
+  | CultureEnrichment
+  | WineRegionEnrichment
+  | FoodPairingEnrichment
+  | ArtPeriodEnrichment
+  | SommelierEnrichment
+  | SensoryEnrichment;

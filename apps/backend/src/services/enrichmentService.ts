@@ -1,0 +1,297 @@
+import { PoolConnection, RowDataPacket } from 'mysql2/promise';
+import { withConnection } from '../db';
+import {
+  AnswerEnrichment,
+  ArtworkContext,
+  ArtistContext,
+  PeriodContext,
+  QuestionTypeId
+} from '../types';
+import {
+  wineRegionFromArtwork,
+  foodPairingFromArtwork,
+  artPeriodsFromArtwork,
+  sommelierPick,
+  fullSensoryExperience
+} from './analyticsService';
+
+type Conn = PoolConnection;
+
+async function useConn<T>(existing: Conn | undefined, fn: (c: Conn) => Promise<T>): Promise<T> {
+  if (existing) return fn(existing);
+  return withConnection(fn);
+}
+
+// --- Shared helpers ---
+
+async function getArtworkContext(artworkId: number, conn: Conn): Promise<ArtworkContext | null> {
+  const [rows] = await conn.query<RowDataPacket[]>(
+    `SELECT artist_display_name, culture, department, is_highlight, object_url, tags
+     FROM met_artwork WHERE artwork_id = ? LIMIT 1`,
+    [artworkId]
+  );
+  if (!rows.length) return null;
+  const r = rows[0];
+  let tags: string[] | null = null;
+  if (r.tags) {
+    try { tags = typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags; } catch { tags = null; }
+  }
+  return {
+    artistName: r.artist_display_name ?? null,
+    culture: r.culture ?? null,
+    department: r.department ?? null,
+    isHighlight: !!r.is_highlight,
+    objectUrl: r.object_url ?? null,
+    tags
+  };
+}
+
+async function getArtistProfile(artistName: string | null, conn: Conn): Promise<ArtistContext | null> {
+  if (!artistName) return null;
+  const [rows] = await conn.query<RowDataPacket[]>(
+    `SELECT full_name, bio, birth_year, death_year
+     FROM artist_profile WHERE full_name = ? LIMIT 1`,
+    [artistName]
+  );
+  if (!rows.length) return null;
+  const r = rows[0];
+  let bio = r.bio ?? null;
+  if (bio && bio.length > 300) bio = bio.slice(0, 297) + '...';
+  return {
+    fullName: r.full_name,
+    bio,
+    birthYear: r.birth_year ?? null,
+    deathYear: r.death_year ?? null
+  };
+}
+
+async function getPeriodsForArtwork(artworkId: number, conn: Conn): Promise<PeriodContext[]> {
+  const [rows] = await conn.query<RowDataPacket[]>(
+    `SELECT ap.period_name, ap.region, ap.start_year, ap.end_year,
+            COUNT(DISTINCT awp2.artwork_id) AS artwork_count
+     FROM artwork_period awp
+     JOIN art_period ap ON ap.period_id = awp.period_id
+     LEFT JOIN artwork_period awp2 ON awp2.period_id = ap.period_id
+     WHERE awp.artwork_id = ?
+     GROUP BY ap.period_id, ap.period_name, ap.region, ap.start_year, ap.end_year`,
+    [artworkId]
+  );
+  return rows.map(r => ({
+    periodName: r.period_name,
+    region: r.region,
+    startYear: r.start_year,
+    endYear: r.end_year,
+    artworkCount: Number(r.artwork_count)
+  }));
+}
+
+async function getCountryForArtwork(artworkId: number, conn: Conn): Promise<{ countryName: string; continent: string } | null> {
+  const [rows] = await conn.query<RowDataPacket[]>(
+    `SELECT c.country_name, c.continent
+     FROM met_artwork ma
+     JOIN culture_country cc ON cc.culture_value = ma.culture
+     JOIN country c ON c.country_id = cc.country_id
+     WHERE ma.artwork_id = ? LIMIT 1`,
+    [artworkId]
+  );
+  if (!rows.length) return null;
+  return { countryName: rows[0].country_name, continent: rows[0].continent };
+}
+
+// --- Per-type enrichment builders ---
+
+async function enrichDepartment(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
+  const [artwork, periods] = await Promise.all([
+    getArtworkContext(artworkId, conn),
+    getPeriodsForArtwork(artworkId, conn)
+  ]);
+  const artist = await getArtistProfile(artwork?.artistName ?? null, conn);
+
+  let departmentStats = { totalArtworks: 0, countryCount: 0, topCountry: null as string | null };
+  if (artwork?.department) {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT COUNT(DISTINCT ma.artwork_id) AS total_artworks,
+              COUNT(DISTINCT c.country_id) AS country_count,
+              (SELECT c2.country_name FROM met_artwork ma2
+               JOIN culture_country cc2 ON cc2.culture_value = ma2.culture
+               JOIN country c2 ON c2.country_id = cc2.country_id
+               WHERE ma2.department = ?
+               GROUP BY c2.country_id ORDER BY COUNT(*) DESC LIMIT 1) AS top_country
+       FROM met_artwork ma
+       LEFT JOIN culture_country cc ON cc.culture_value = ma.culture
+       LEFT JOIN country c ON c.country_id = cc.country_id
+       WHERE ma.department = ?`,
+      [artwork.department, artwork.department]
+    );
+    if (rows.length) {
+      departmentStats = {
+        totalArtworks: Number(rows[0].total_artworks),
+        countryCount: Number(rows[0].country_count),
+        topCountry: rows[0].top_country ?? null
+      };
+    }
+  }
+
+  return { type: 'department', artwork: artwork!, artist, periods, departmentStats };
+}
+
+async function enrichCulture(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
+  const artwork = await getArtworkContext(artworkId, conn);
+  const artist = await getArtistProfile(artwork?.artistName ?? null, conn);
+
+  let country: { countryName: string; continent: string } | null = null;
+  let cultureArtworkCount = 0;
+  let notableWineVariety: string | null = null;
+
+  const [rows] = await conn.query<RowDataPacket[]>(
+    `SELECT c.country_name, c.continent,
+            (SELECT COUNT(*) FROM met_artwork ma2 WHERE ma2.culture = ma.culture) AS culture_artwork_count,
+            (SELECT w.variety FROM wine w WHERE w.country = c.country_name
+             GROUP BY w.variety ORDER BY COUNT(*) DESC LIMIT 1) AS notable_wine_variety
+     FROM met_artwork ma
+     JOIN culture_country cc ON cc.culture_value = ma.culture
+     JOIN country c ON c.country_id = cc.country_id
+     WHERE ma.artwork_id = ? LIMIT 1`,
+    [artworkId]
+  );
+  if (rows.length) {
+    country = { countryName: rows[0].country_name, continent: rows[0].continent };
+    cultureArtworkCount = Number(rows[0].culture_artwork_count);
+    notableWineVariety = rows[0].notable_wine_variety ?? null;
+  }
+
+  return { type: 'culture', artwork: artwork!, artist, country, cultureArtworkCount, notableWineVariety };
+}
+
+async function enrichWineRegion(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
+  const [artwork, regionRows, countryInfo] = await Promise.all([
+    getArtworkContext(artworkId, conn),
+    wineRegionFromArtwork(artworkId, conn),
+    getCountryForArtwork(artworkId, conn)
+  ]);
+
+  const regions = regionRows.map((r: RowDataPacket) => ({
+    province: r.province,
+    avgPoints: Number(r.avg_points),
+    wineCount: Number(r.wine_count),
+    topVariety: r.top_variety
+  }));
+
+  return { type: 'wine_region', artwork: artwork!, regions, countryName: countryInfo?.countryName ?? null };
+}
+
+async function enrichFoodPairing(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
+  const [artwork, pairingRows, countryInfo] = await Promise.all([
+    getArtworkContext(artworkId, conn),
+    foodPairingFromArtwork(artworkId, conn),
+    getCountryForArtwork(artworkId, conn)
+  ]);
+
+  const pairings = pairingRows.map((r: RowDataPacket) => ({
+    foodName: r.food_name,
+    cuisineRegion: r.cuisine_region,
+    variety: r.variety,
+    avgWinePoints: Number(r.avg_wine_points)
+  }));
+
+  return { type: 'food_pairing', artwork: artwork!, pairings, countryName: countryInfo?.countryName ?? null };
+}
+
+async function enrichArtPeriod(artworkId: number, correctValue: string, conn: Conn): Promise<AnswerEnrichment> {
+  const artwork = await getArtworkContext(artworkId, conn);
+  const [artist, allPeriods, siblingRows] = await Promise.all([
+    getArtistProfile(artwork?.artistName ?? null, conn),
+    getPeriodsForArtwork(artworkId, conn),
+    artPeriodsFromArtwork(artworkId, conn)
+  ]);
+
+  const period = allPeriods.find(p => p.periodName === correctValue) ?? allPeriods[0] ?? null;
+  const siblingPeriods = siblingRows
+    .filter((r: RowDataPacket) => r.period_name !== correctValue)
+    .slice(0, 3)
+    .map((r: RowDataPacket) => ({
+      periodName: r.period_name,
+      region: r.region,
+      startYear: 0,
+      endYear: 0,
+      artworkCount: Number(r.artwork_count)
+    }));
+
+  return { type: 'art_period', artwork: artwork!, artist, period, siblingPeriods };
+}
+
+async function enrichSommelier(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
+  const [artwork, periods, wineRows] = await Promise.all([
+    getArtworkContext(artworkId, conn),
+    getPeriodsForArtwork(artworkId, conn),
+    sommelierPick(artworkId, conn)
+  ]);
+
+  const topWines = wineRows.slice(0, 3).map((r: RowDataPacket) => ({
+    variety: r.variety,
+    winery: r.winery,
+    avgPoints: Number(r.avg_points),
+    country: r.country,
+    priceRange: r.price_range ?? null
+  }));
+
+  return { type: 'sommelier', artwork: artwork!, period: periods[0] ?? null, topWines };
+}
+
+async function enrichSensory(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
+  const [artwork, periods, sensoryRows, countryInfo] = await Promise.all([
+    getArtworkContext(artworkId, conn),
+    getPeriodsForArtwork(artworkId, conn),
+    fullSensoryExperience(artworkId, conn),
+    getCountryForArtwork(artworkId, conn)
+  ]);
+
+  const top = sensoryRows[0] as RowDataPacket | undefined;
+
+  return {
+    type: 'sensory',
+    artwork: artwork!,
+    period: periods[0] ?? null,
+    wine: top ? {
+      variety: top.variety,
+      winery: '',
+      avgPoints: Number(top.avg_wine_points),
+      country: top.wine_country,
+      priceRange: null
+    } : null,
+    foodPairing: top ? {
+      foodName: top.food_name,
+      cuisineRegion: top.cuisine_region,
+      variety: top.variety,
+      avgWinePoints: Number(top.avg_wine_points)
+    } : null,
+    countryName: countryInfo?.countryName ?? null
+  };
+}
+
+// --- Main export ---
+
+export async function getEnrichment(
+  questionType: QuestionTypeId,
+  artworkId: number,
+  correctValue: string,
+  connection?: Conn
+): Promise<AnswerEnrichment | undefined> {
+  try {
+    return await useConn(connection, async (conn) => {
+      switch (questionType) {
+        case 'department':   return enrichDepartment(artworkId, conn);
+        case 'culture':      return enrichCulture(artworkId, conn);
+        case 'wine_region':  return enrichWineRegion(artworkId, conn);
+        case 'food_pairing': return enrichFoodPairing(artworkId, conn);
+        case 'art_period':   return enrichArtPeriod(artworkId, correctValue, conn);
+        case 'sommelier':    return enrichSommelier(artworkId, conn);
+        case 'sensory':      return enrichSensory(artworkId, conn);
+        default:             return undefined;
+      }
+    });
+  } catch (err) {
+    console.warn('Enrichment failed (non-blocking):', err);
+    return undefined;
+  }
+}

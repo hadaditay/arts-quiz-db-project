@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
-import { Round, User } from '../types';
+import { AnswerEnrichment, Round, User } from '../types';
 import { ArtworkImage } from './ArtworkImage';
+import { EnrichmentPanel } from './EnrichmentPanel';
 import styles from './GameView.module.css';
+
+const ROUNDS_PER_SESSION = 15;
+
+export interface SessionResult {
+  totalRounds: number;
+  correctCount: number;
+  questionTypes: Record<string, { correct: number; total: number }>;
+}
 
 interface Props {
   user: User;
   onExit: () => void;
+  onSessionEnd: (result: SessionResult) => void;
 }
 
 interface ResultState {
@@ -14,17 +24,27 @@ interface ResultState {
   selected: string;
 }
 
-export function GameView({ user, onExit }: Props) {
+export function GameView({ user, onExit, onSessionEnd }: Props) {
   const [round, setRound] = useState<Round | null>(null);
   const [prefetched, setPrefetched] = useState<Round | null>(null);
   const [loading, setLoading] = useState(false);
   const [answering, setAnswering] = useState(false);
   const [result, setResult] = useState<ResultState | null>(null);
+  const [enrichment, setEnrichment] = useState<AnswerEnrichment | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [roundNumber, setRoundNumber] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [typeStats, setTypeStats] = useState<Record<string, { correct: number; total: number }>>({});
 
   const prefetchNextRound = async () => {
     try {
       const next = await api.nextRound();
+      // Preload the image so it's cached when the round is shown
+      const imgSrc = next.artwork.primaryImageSmall || next.artwork.primaryImage;
+      if (imgSrc) {
+        const img = new Image();
+        img.src = imgSrc;
+      }
       setPrefetched(next);
     } catch (err) {
       console.warn('Next round prefetch failed', err);
@@ -39,6 +59,9 @@ export function GameView({ user, onExit }: Props) {
       setRound(next);
       setPrefetched(null);
       setResult(null);
+      setEnrichment(null);
+      if (!initial) setRoundNumber(n => n + 1);
+      else setRoundNumber(1);
       if (initial || next) {
         prefetchNextRound();
       }
@@ -62,6 +85,13 @@ export function GameView({ user, onExit }: Props) {
       const response = await api.answerRound(round.roundId, selected);
       setRound(response.payload);
       setResult({ correct: response.correct, selected });
+      setEnrichment(response.enrichment ?? null);
+      if (response.correct) setCorrectCount(c => c + 1);
+      setTypeStats(prev => {
+        const qt = round.questionType;
+        const existing = prev[qt] ?? { correct: 0, total: 0 };
+        return { ...prev, [qt]: { correct: existing.correct + (response.correct ? 1 : 0), total: existing.total + 1 } };
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit answer');
     } finally {
@@ -69,7 +99,13 @@ export function GameView({ user, onExit }: Props) {
     }
   };
 
-  const handleSkip = () => loadRound();
+  const handleNext = () => {
+    if (result && roundNumber >= ROUNDS_PER_SESSION) {
+      onSessionEnd({ totalRounds: roundNumber, correctCount, questionTypes: typeStats });
+      return;
+    }
+    loadRound();
+  };
 
   if (loading && !round) {
     return <div>Loading your first round…</div>;
@@ -100,7 +136,10 @@ export function GameView({ user, onExit }: Props) {
           <p className={styles.subtle}>Question type: {round.questionType}</p>
           <h2 className={styles.prompt}>{round.prompt}</h2>
         </div>
-        <div className={styles.userBadge}>Playing as {user.username}</div>
+        <div className={styles.headerRight}>
+          <div className={styles.roundCounter}>{roundNumber} / {ROUNDS_PER_SESSION}</div>
+          <div className={styles.userBadge}>Playing as {user.username}</div>
+        </div>
       </div>
 
       {shouldShowImage ? (
@@ -140,14 +179,16 @@ export function GameView({ user, onExit }: Props) {
         </div>
       ) : null}
 
+      {result && enrichment ? <EnrichmentPanel enrichment={enrichment} /> : null}
+
       {error ? <div className={styles.error}>{error}</div> : null}
 
       <div className={styles.actions}>
         <button className={styles.secondary} onClick={onExit} disabled={loading || answering}>
           Exit
         </button>
-        <button className={styles.primary} onClick={handleSkip} disabled={loading || answering}>
-          Next
+        <button className={styles.primary} onClick={handleNext} disabled={loading || answering}>
+          {result && roundNumber >= ROUNDS_PER_SESSION ? 'View Results' : 'Next'}
         </button>
       </div>
     </div>

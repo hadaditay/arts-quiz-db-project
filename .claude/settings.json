@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vite:*)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code} \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/department-diversity)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code} \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/difficulty-by-period)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code} \\(%{time_total}s\\)\" http://localhost:4000/api/leaderboard/all-time)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code} \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/period-leaderboard)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code} \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/wine-art-country)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code} \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/cross-period-artists)",
+      "Bash(mysql -u root arts_quiz -e \"EXPLAIN SELECT multi.full_name, multi.period_names, multi.artwork_count, COALESCE\\(homeland_wine.top_variety, ''No wines found''\\) AS homeland_wine, COALESCE\\(homeland_wine.avg_points, 0\\) AS wine_avg_points FROM \\( SELECT prof.full_name, GROUP_CONCAT\\(DISTINCT ap.period_name ORDER BY ap.start_year SEPARATOR '', ''\\) AS period_names, COUNT\\(DISTINCT ma.artwork_id\\) AS artwork_count, ma.culture AS primary_culture FROM artist_profile prof JOIN met_artwork ma ON ma.artist_display_name = prof.full_name JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id JOIN art_period ap ON ap.period_id = awp.period_id GROUP BY prof.artist_profile_id, prof.full_name, ma.culture HAVING COUNT\\(DISTINCT ap.period_id\\) >= 2 \\) AS multi LEFT JOIN \\( SELECT cc.culture_value, \\( SELECT w2.variety FROM wine w2 WHERE w2.country = c.country_name GROUP BY w2.variety ORDER BY AVG\\(w2.points\\) DESC LIMIT 1 \\) AS top_variety, ROUND\\(AVG\\(w.points\\), 1\\) AS avg_points FROM culture_country cc JOIN country c ON c.country_id = cc.country_id JOIN wine w ON w.country = c.country_name GROUP BY cc.culture_value, c.country_name \\) AS homeland_wine ON homeland_wine.culture_value = multi.primary_culture ORDER BY multi.artwork_count DESC LIMIT 4;\")",
+      "Bash(mysql -u root curators_eye -e \"EXPLAIN SELECT cc.culture_value, \\(SELECT w2.variety FROM wine w2 WHERE w2.country = c.country_name GROUP BY w2.variety ORDER BY AVG\\(w2.points\\) DESC LIMIT 1\\) AS top_variety, ROUND\\(AVG\\(w.points\\), 1\\) AS avg_points FROM culture_country cc JOIN country c ON c.country_id = cc.country_id JOIN wine w ON w.country = c.country_name GROUP BY cc.culture_value, c.country_name;\")",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code} \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/continental-timeline)",
+      "Bash(curl -s -o /dev/null -w \"Backend: %{http_code}\" http://localhost:4000/api/analytics/difficulty-by-period)",
+      "Bash(curl -s -o /dev/null -w \"Frontend: %{http_code}\" http://localhost:5173)",
+      "Bash(curl -s -w \" \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/continental-timeline)",
+      "Bash(timeout 15 curl -s -w \" \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/department-diversity)",
+      "Bash(curl -s -w \" \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/wine-art-country)",
+      "Bash(timeout 15 curl -s -w \" \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/cross-period-artists)",
+      "Bash(curl -s -w \" \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/period-leaderboard)",
+      "Bash(curl -s -w \" \\(%{time_total}s\\)\" http://localhost:4000/api/analytics/difficulty-by-period)",
+      "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/continental-timeline)",
+      "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/department-diversity)",
+      "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/wine-art-country)",
+      "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/cross-period-artists)",
+      "Bash(curl -s -w \"%{time_total}s\\\\n\" -o /dev/null http://localhost:4000/api/analytics/period-leaderboard)"
+    ]
+  }
+}

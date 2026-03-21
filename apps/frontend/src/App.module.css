@@ -124,8 +124,13 @@
   line-height: 1.7;
 }
 
-.startButton {
+.homeActions {
+  display: flex;
+  gap: 14px;
   margin-top: 16px;
+}
+
+.startButton {
   border: none;
   border-radius: 10px;
   padding: 16px 36px;
@@ -146,4 +151,23 @@
 
 .startButton:active {
   transform: translateY(0);
+}
+
+.analyticsButton {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 16px 36px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.analyticsButton:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  transform: translateY(-2px);
 }

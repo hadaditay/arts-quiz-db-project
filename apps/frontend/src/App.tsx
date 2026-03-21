@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import { api } from './api/client';
-import { GameView } from './components/GameView';
+import { GameView, SessionResult } from './components/GameView';
+import { SessionSummary } from './components/SessionSummary';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { LoginForm } from './components/LoginForm';
 import styles from './App.module.css';
 import { User } from './types';
+
+type Screen = 'home' | 'game' | 'summary' | 'analytics';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [inGame, setInGame] = useState(false);
+  const [screen, setScreen] = useState<Screen>('home');
+  const [sessionResult, setSessionResult] = useState<SessionResult | null>(null);
 
   useEffect(() => {
     api
@@ -22,7 +27,7 @@ function App() {
   const handleLogin = async (username: string, password: string) => {
     const loggedIn = await api.login(username, password);
     setUser(loggedIn);
-    setInGame(false);
+    setScreen('home');
   };
 
   const handleRegister = async (
@@ -33,7 +38,7 @@ function App() {
   ) => {
     const registered = await api.register(username, password, firstName, lastName);
     setUser(registered);
-    setInGame(false);
+    setScreen('home');
   };
 
   const handleLogout = async () => {
@@ -44,7 +49,8 @@ function App() {
       console.error('Logout failed:', error);
     } finally {
       setUser(null);
-      setInGame(false);
+      setScreen('home');
+      setSessionResult(null);
       setLoggingOut(false);
     }
   };
@@ -80,8 +86,24 @@ function App() {
           {loading ? (
             <div>Checking session…</div>
           ) : user ? (
-            inGame ? (
-              <GameView user={user} onExit={() => setInGame(false)} />
+            screen === 'game' ? (
+              <GameView
+                user={user}
+                onExit={() => setScreen('home')}
+                onSessionEnd={(res) => { setSessionResult(res); setScreen('summary'); }}
+              />
+            ) : screen === 'summary' && sessionResult ? (
+              <SessionSummary
+                result={sessionResult}
+                username={user.username}
+                onPlayAgain={() => { setSessionResult(null); setScreen('game'); }}
+                onHome={() => { setSessionResult(null); setScreen('home'); }}
+              />
+            ) : screen === 'analytics' ? (
+              <AnalyticsDashboard
+                username={user.username}
+                onBack={() => setScreen('home')}
+              />
             ) : (
               <div className={styles.homeScreen}>
                 <p className={styles.homeEyebrow}>Welcome back</p>
@@ -89,13 +111,22 @@ function App() {
                 <p className={styles.homeText}>
                   Start a new round of museum trivia and test how sharp your curator&apos;s eye really is.
                 </p>
-                <button
-                  type="button"
-                  className={styles.startButton}
-                  onClick={() => setInGame(true)}
-                >
-                  התחל לשחק
-                </button>
+                <div className={styles.homeActions}>
+                  <button
+                    type="button"
+                    className={styles.startButton}
+                    onClick={() => setScreen('game')}
+                  >
+                    Start Quiz
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.analyticsButton}
+                    onClick={() => setScreen('analytics')}
+                  >
+                    Analytics
+                  </button>
+                </div>
               </div>
             )
           ) : (

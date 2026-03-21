@@ -1,4 +1,4 @@
-import { AnswerResponse, Round, User } from '../types';
+import { AnswerResponse, Round, User, PlayerStats, LeaderboardEntry, WineArtCountryRow, DifficultyRow, ContinentalTimelineRow, DepartmentDiversityRow, CrossPeriodArtistRow } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -74,5 +74,33 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ selected })
     });
+  },
+
+  playerStats(): Promise<PlayerStats[]> {
+    return request<PlayerStats[]>('/api/analytics/player-stats');
+  },
+
+  leaderboard(): Promise<LeaderboardEntry[]> {
+    return request<LeaderboardEntry[]>('/api/analytics/period-leaderboard');
+  },
+
+  wineArtCountry(): Promise<WineArtCountryRow[]> {
+    return request<WineArtCountryRow[]>('/api/analytics/wine-art-country');
+  },
+
+  difficultyByPeriod(): Promise<DifficultyRow[]> {
+    return request<DifficultyRow[]>('/api/analytics/difficulty-by-period');
+  },
+
+  continentalTimeline(): Promise<ContinentalTimelineRow[]> {
+    return request<ContinentalTimelineRow[]>('/api/analytics/continental-timeline');
+  },
+
+  departmentDiversity(): Promise<DepartmentDiversityRow[]> {
+    return request<DepartmentDiversityRow[]>('/api/analytics/department-diversity');
+  },
+
+  crossPeriodArtists(): Promise<CrossPeriodArtistRow[]> {
+    return request<CrossPeriodArtistRow[]>('/api/analytics/cross-period-artists');
   }
 };

@@ -2,7 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import { withConnection } from '../db';
 import { generateQuestion } from '../question/registry';
-import { AuthSession, QuestionOption, RoundPayload } from '../types';
+import { AuthSession, QuestionOption, QuestionTypeId, RoundPayload } from '../types';
+import { getEnrichment } from './enrichmentService';
 
 const POINTS_PER_CORRECT = 10;
 
@@ -116,7 +117,14 @@ export async function answerRound(
       }
     };
 
-    return { correct: finalCorrect, payload };
+    const enrichment = await getEnrichment(
+      row.question_type as QuestionTypeId,
+      row.artwork_id,
+      row.correct_value,
+      connection
+    );
+
+    return { correct: finalCorrect, payload, enrichment };
   };
 
   if (existingConnection) {

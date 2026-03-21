@@ -245,33 +245,13 @@ export async function departmentDiversity() {
           dept.department,
           dept.total_artworks,
           dept.country_count,
-          dept.top_country,
-          ROUND(dept.top_country_pct, 1) AS top_country_dominance_pct
+          top_c.country_name AS top_country,
+          ROUND(top_c.cnt * 100.0 / dept.total_artworks, 1) AS top_country_dominance_pct
       FROM (
           SELECT
               ma.department,
               COUNT(DISTINCT ma.artwork_id) AS total_artworks,
-              COUNT(DISTINCT c.country_id) AS country_count,
-              (
-                  SELECT c2.country_name
-                  FROM met_artwork ma2
-                  JOIN culture_country cc2 ON cc2.culture_value = ma2.culture
-                  JOIN country c2 ON c2.country_id = cc2.country_id
-                  WHERE ma2.department = ma.department
-                  GROUP BY c2.country_id, c2.country_name
-                  ORDER BY COUNT(*) DESC
-                  LIMIT 1
-              ) AS top_country,
-              (
-                  SELECT COUNT(*) * 100.0 / COUNT(DISTINCT ma3.artwork_id)
-                  FROM met_artwork ma3
-                  JOIN culture_country cc3 ON cc3.culture_value = ma3.culture
-                  JOIN country c3 ON c3.country_id = cc3.country_id
-                  WHERE ma3.department = ma.department
-                  GROUP BY c3.country_id
-                  ORDER BY COUNT(*) DESC
-                  LIMIT 1
-              ) AS top_country_pct
+              COUNT(DISTINCT c.country_id) AS country_count
           FROM met_artwork ma
           JOIN culture_country cc ON cc.culture_value = ma.culture
           JOIN country c ON c.country_id = cc.country_id
@@ -279,6 +259,18 @@ export async function departmentDiversity() {
           GROUP BY ma.department
           HAVING COUNT(DISTINCT ma.artwork_id) >= 20
       ) AS dept
+      JOIN (
+          SELECT
+              ma2.department,
+              c2.country_name,
+              COUNT(*) AS cnt,
+              ROW_NUMBER() OVER (PARTITION BY ma2.department ORDER BY COUNT(*) DESC) AS rn
+          FROM met_artwork ma2
+          JOIN culture_country cc2 ON cc2.culture_value = ma2.culture
+          JOIN country c2 ON c2.country_id = cc2.country_id
+          WHERE ma2.department IS NOT NULL
+          GROUP BY ma2.department, c2.country_id, c2.country_name
+      ) AS top_c ON top_c.department = dept.department AND top_c.rn = 1
       ORDER BY dept.country_count DESC
       LIMIT 4`
     );
@@ -402,19 +394,21 @@ export async function crossPeriodArtistWines() {
       LEFT JOIN (
           SELECT
               cc.culture_value,
-              (
-                  SELECT w2.variety
-                  FROM wine w2
-                  WHERE w2.country = c.country_name
-                  GROUP BY w2.variety
-                  ORDER BY AVG(w2.points) DESC
-                  LIMIT 1
-              ) AS top_variety,
-              ROUND(AVG(w.points), 1) AS avg_points
+              top_var.variety AS top_variety,
+              wine_avg.avg_points
           FROM culture_country cc
           JOIN country c ON c.country_id = cc.country_id
-          JOIN wine w ON w.country = c.country_name
-          GROUP BY cc.culture_value, c.country_name
+          LEFT JOIN (
+              SELECT w.country, w.variety,
+                     ROW_NUMBER() OVER (PARTITION BY w.country ORDER BY AVG(w.points) DESC) AS rn
+              FROM wine w
+              GROUP BY w.country, w.variety
+          ) AS top_var ON top_var.country = c.country_name AND top_var.rn = 1
+          LEFT JOIN (
+              SELECT w.country, ROUND(AVG(w.points), 1) AS avg_points
+              FROM wine w
+              GROUP BY w.country
+          ) AS wine_avg ON wine_avg.country = c.country_name
       ) AS homeland_wine ON homeland_wine.culture_value = multi.primary_culture
       ORDER BY multi.artwork_count DESC
       LIMIT 4`

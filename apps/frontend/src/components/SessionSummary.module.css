@@ -1,0 +1,213 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent-gold);
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 2rem;
+  font-family: 'Playfair Display', Georgia, serif;
+  color: var(--text-primary);
+}
+
+.scoreRing {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.scoreNumber {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.scoreSlash {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+}
+
+.scoreTotal {
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.accuracyLabel {
+  margin: -10px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.section {
+  width: 100%;
+}
+
+.sectionLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  font-family: 'Inter', sans-serif;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.categoryCard {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.categoryName {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.categoryStat {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.categoryPct {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+
+.statsRow {
+  display: flex;
+  gap: 12px;
+}
+
+.statBox {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.statValue {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lbRow {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid transparent;
+}
+
+.lbRowSelf {
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-glow);
+}
+
+.lbRank {
+  width: 28px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.lbName {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.lbScore {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.loading {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.primary {
+  background: linear-gradient(135deg, #c9a84c, #e8d5a3);
+  color: #0f0f0f;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  padding: 12px 24px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondary:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
