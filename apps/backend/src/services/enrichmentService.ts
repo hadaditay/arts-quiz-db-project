@@ -269,6 +269,71 @@ async function enrichSensory(artworkId: number, conn: Conn): Promise<AnswerEnric
   };
 }
 
+async function enrichWarConflict(artworkId: number, correctValue: string, conn: Conn): Promise<AnswerEnrichment> {
+  const [artwork, periods, artist] = await Promise.all([
+    getArtworkContext(artworkId, conn),
+    getPeriodsForArtwork(artworkId, conn),
+    getArtworkContext(artworkId, conn).then(a => getArtistProfile(a?.artistName ?? null, conn))
+  ]);
+
+  // Fetch war details
+  const [warRows] = await conn.query<RowDataPacket[]>(
+    `SELECT war_name, war_type, start_year, end_year, region,
+            country_name, description, notable_figures
+     FROM war_battle WHERE war_name = ? LIMIT 1`,
+    [correctValue]
+  );
+
+  const warRow = warRows[0];
+  const war = warRow ? {
+    warName: warRow.war_name,
+    warType: warRow.war_type,
+    startYear: Number(warRow.start_year),
+    endYear: Number(warRow.end_year),
+    region: warRow.region,
+    countryName: warRow.country_name ?? null,
+    description: warRow.description ?? null,
+    notableFigures: warRow.notable_figures ?? null
+  } : {
+    warName: correctValue, warType: 'war', startYear: 0, endYear: 0,
+    region: '', countryName: null, description: null, notableFigures: null
+  };
+
+  // Fetch sibling conflicts (same country, overlapping with artwork's period)
+  const [siblingRows] = await conn.query<RowDataPacket[]>(
+    `SELECT wb2.war_name, wb2.war_type, wb2.start_year, wb2.end_year
+     FROM war_battle wb2
+     JOIN country c ON c.country_name = wb2.country_name
+     JOIN culture_country cc ON cc.country_id = c.country_id
+     JOIN met_artwork ma ON ma.culture = cc.culture_value
+     JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
+     JOIN art_period ap ON ap.period_id = awp.period_id
+     WHERE ma.artwork_id = ?
+       AND wb2.war_name != ?
+       AND wb2.start_year <= ap.end_year
+       AND wb2.end_year >= ap.start_year
+     ORDER BY wb2.start_year
+     LIMIT 3`,
+    [artworkId, correctValue]
+  );
+
+  const siblingConflicts = siblingRows.map((r: RowDataPacket) => ({
+    warName: r.war_name,
+    warType: r.war_type,
+    startYear: Number(r.start_year),
+    endYear: Number(r.end_year)
+  }));
+
+  return {
+    type: 'war_conflict',
+    artwork: artwork!,
+    artist,
+    period: periods[0] ?? null,
+    war,
+    siblingConflicts
+  };
+}
+
 // --- Main export ---
 
 export async function getEnrichment(
@@ -287,6 +352,7 @@ export async function getEnrichment(
         case 'art_period':   return enrichArtPeriod(artworkId, correctValue, conn);
         case 'sommelier':    return enrichSommelier(artworkId, conn);
         case 'sensory':      return enrichSensory(artworkId, conn);
+        case 'war_conflict': return enrichWarConflict(artworkId, correctValue, conn);
         default:             return undefined;
       }
     });

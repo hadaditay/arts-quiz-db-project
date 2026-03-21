@@ -1,4 +1,4 @@
-export type QuestionType = 'department' | 'culture' | 'wine_region' | 'food_pairing' | 'art_period' | 'sommelier' | 'sensory';
+export type QuestionType = 'department' | 'culture' | 'wine_region' | 'food_pairing' | 'art_period' | 'sommelier' | 'sensory' | 'war_conflict';
 
 export interface ArtworkRef {
   id: number;
@@ -118,6 +118,26 @@ export interface SensoryEnrichment {
   countryName: string | null;
 }
 
+export interface WarContext {
+  warName: string;
+  warType: string;
+  startYear: number;
+  endYear: number;
+  region: string;
+  countryName: string | null;
+  description: string | null;
+  notableFigures: string | null;
+}
+
+export interface WarConflictEnrichment {
+  type: 'war_conflict';
+  artwork: ArtworkContext;
+  artist: ArtistContext | null;
+  period: PeriodContext | null;
+  war: WarContext;
+  siblingConflicts: Array<{ warName: string; warType: string; startYear: number; endYear: number }>;
+}
+
 export type AnswerEnrichment =
   | DepartmentEnrichment
   | CultureEnrichment
@@ -125,7 +145,8 @@ export type AnswerEnrichment =
   | FoodPairingEnrichment
   | ArtPeriodEnrichment
   | SommelierEnrichment
-  | SensoryEnrichment;
+  | SensoryEnrichment
+  | WarConflictEnrichment;
 
 export interface AnswerResponse {
   correct: boolean;
@@ -199,4 +220,13 @@ export interface CrossPeriodArtistRow {
   artwork_count: number;
   homeland_wine: string;
   wine_avg_points: number;
+}
+
+export interface ArtBornInConflictRow {
+  continent: string;
+  period_name: string;
+  artwork_count: number;
+  war_count: number;
+  notable_wars: string;
+  pct_of_total: number;
 }

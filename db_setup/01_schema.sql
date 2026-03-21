@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS art_period;
 DROP TABLE IF EXISTS culture_country;
 DROP TABLE IF EXISTS wine_food_pairing;
 DROP TABLE IF EXISTS wine;
+DROP TABLE IF EXISTS war_battle;
 DROP TABLE IF EXISTS country;
 DROP TABLE IF EXISTS met_artwork;
 DROP TABLE IF EXISTS leaderboard_all_time;
@@ -129,6 +130,20 @@ CREATE TABLE wine (
   PRIMARY KEY (wine_id)
 );
 
+CREATE TABLE war_battle (
+  war_id INT NOT NULL AUTO_INCREMENT,
+  war_name VARCHAR(255) NOT NULL,
+  war_type ENUM('war', 'battle', 'siege', 'revolution', 'uprising') NOT NULL,
+  start_year INT NOT NULL,
+  end_year INT NOT NULL,
+  region VARCHAR(128) NOT NULL,
+  country_name VARCHAR(128) NULL,
+  description TEXT NULL,
+  notable_figures VARCHAR(512) NULL,
+  PRIMARY KEY (war_id),
+  UNIQUE KEY uq_war_name_start (war_name, start_year)
+);
+
 CREATE TABLE wine_food_pairing (
   pairing_id INT NOT NULL AUTO_INCREMENT,
   variety VARCHAR(255) NOT NULL,
@@ -136,6 +151,10 @@ CREATE TABLE wine_food_pairing (
   cuisine_region VARCHAR(128) NOT NULL,
   PRIMARY KEY (pairing_id)
 );
+
+CREATE INDEX idx_war_years ON war_battle (start_year, end_year);
+CREATE INDEX idx_war_country ON war_battle (country_name);
+CREATE INDEX idx_war_region ON war_battle (region);
 
 CREATE INDEX idx_artwork_department ON met_artwork (department);
 CREATE INDEX idx_artwork_culture ON met_artwork (culture);

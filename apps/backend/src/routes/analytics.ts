@@ -70,4 +70,21 @@ export async function analyticsRoutes(app: FastifyInstance) {
   app.get('/api/analytics/difficulty-by-period', async () => {
     return analytics.difficultyByPeriod();
   });
+
+  // Q13: Wars/battles matching an artwork's homeland and era
+  app.get('/api/analytics/war-from-artwork/:artworkId', async (request) => {
+    const { artworkId } = z.object({ artworkId: z.coerce.number() }).parse(request.params);
+    return analytics.warFromArtwork(artworkId);
+  });
+
+  // Q14: Artworks created during a specific war
+  app.get('/api/analytics/artwork-from-war/:warId', async (request) => {
+    const { warId } = z.object({ warId: z.coerce.number() }).parse(request.params);
+    return analytics.artworkFromWar(warId);
+  });
+
+  // Q15: Art Born in Conflict analytics
+  app.get('/api/analytics/art-born-in-conflict', async () => {
+    return analytics.artBornInConflict();
+  });
 }

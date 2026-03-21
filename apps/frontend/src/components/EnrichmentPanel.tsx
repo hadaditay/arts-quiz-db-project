@@ -236,6 +236,49 @@ function SensoryContent({ e }: { e: Extract<AnswerEnrichment, { type: 'sensory' 
   );
 }
 
+function WarConflictContent({ e }: { e: Extract<AnswerEnrichment, { type: 'war_conflict' }> }) {
+  const { artwork, artist, period, war, siblingConflicts } = e;
+  return (
+    <>
+      <ArtworkInfo artwork={artwork} artist={artist} />
+      {period && (
+        <div>
+          <span className={styles.badge}>{period.periodName} ({period.startYear}&ndash;{period.endYear})</span>
+        </div>
+      )}
+      <p className={styles.sectionLabel}>
+        {war.warName} ({war.startYear}&ndash;{war.endYear})
+      </p>
+      <span className={styles.badge}>{war.warType}</span>
+      {war.countryName && <span className={styles.badge}>{war.countryName}</span>}
+      <span className={styles.badge}>{war.region}</span>
+      {war.description && (
+        <p className={styles.narrative}>{war.description}</p>
+      )}
+      {war.notableFigures && (
+        <p className={styles.narrative}>
+          <strong>Notable figures:</strong> {war.notableFigures}
+        </p>
+      )}
+      {siblingConflicts.length > 0 && (
+        <div>
+          <p className={styles.sectionLabel}>Other conflicts in the region during this era</p>
+          <div className={styles.cardRow}>
+            {siblingConflicts.map(c => (
+              <div key={c.warName} className={styles.card}>
+                <p className={styles.cardTitle}>{c.warName}</p>
+                <p className={styles.cardDetail}>
+                  {c.warType} &middot; {c.startYear}&ndash;{c.endYear}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function EnrichmentPanel({ enrichment }: Props) {
   const [open, setOpen] = useState(true);
 
@@ -248,6 +291,7 @@ export function EnrichmentPanel({ enrichment }: Props) {
     case 'art_period':   content = <ArtPeriodContent e={enrichment} />; break;
     case 'sommelier':    content = <SommelierContent e={enrichment} />; break;
     case 'sensory':      content = <SensoryContent e={enrichment} />; break;
+    case 'war_conflict': content = <WarConflictContent e={enrichment} />; break;
   }
 
   return (

@@ -2,17 +2,18 @@
 
 ## Overview
 
-Curator's Eye uses 12 complex SQL queries that span 4 data sources:
+Curator's Eye uses 15 complex SQL queries that span 5 data sources:
 - **Met Artworks** (47K artworks, 20K artists)
 - **Art Periods** (30 historical movements, 26K artwork mappings)
 - **Countries** (69 countries, 1.3K culture mappings)
 - **Wines & Food** (130K wine reviews, 91 food pairings)
+- **Wars & Battles** (150+ conflicts across all eras of human history)
 
-**9 queries power quiz questions** (75%), **3 serve analytics**.
+**11 queries power quiz questions** (73%), **4 serve analytics**.
 
 ### Quiz Integration
 
-The complex queries are integrated into the quiz through 5 question generators in `apps/backend/src/question/`:
+The complex queries are integrated into the quiz through 6 question generators in `apps/backend/src/question/`:
 
 | Generator | Question Type | Complex Query |
 |-----------|--------------|---------------|
@@ -21,17 +22,20 @@ The complex queries are integrated into the quiz through 5 question generators i
 | `artPeriodQuestion.ts` | `art_period` | artPeriodsFromArtwork |
 | `sommelierQuestion.ts` | `sommelier` | Q4 |
 | `sensoryQuestion.ts` | `sensory` | Q8 |
+| `warConflictQuestion.ts` | `war_conflict` | Q13 |
 
-All 12 queries are also exposed as REST endpoints under `/api/analytics/` (see `apps/backend/src/routes/analytics.ts`).
+All 15 queries are also exposed as REST endpoints under `/api/analytics/` (see `apps/backend/src/routes/analytics.ts`).
 
 ### Data Source Relationships
 
 ```
 met_artwork ──┬── artwork_period ── art_period
               │
-              ├── culture_country ── country ── wine
-              │                                  │
-              └── artist_profile          wine_food_pairing
+              ├── culture_country ── country ──┬── wine
+              │                                │    │
+              └── artist_profile               │  wine_food_pairing
+                                               │
+                                               └── war_battle
 ```
 
 ---
@@ -644,6 +648,176 @@ ORDER BY d.accuracy_pct ASC;
 
 ---
 
+## Query 13: War/Battle from Artwork
+
+**Purpose:** Quiz question — "Which conflict raged near this artwork's homeland while it was being created?"
+**Data Sources:** Art + Period + Country + War
+**Complexity:** Derived table, 5-table JOIN, temporal overlap condition (LEAST/GREATEST), GROUP BY, HAVING
+
+Given an artwork, finds wars/battles that overlap in time with the artwork's art period AND occurred in the same country. The correct answer is the war with the greatest temporal overlap; distractors are from different countries/eras.
+
+```sql
+SELECT
+    matches.war_name,
+    matches.war_type,
+    matches.start_year,
+    matches.end_year,
+    matches.description,
+    matches.overlap_years
+FROM (
+    SELECT
+        wb.war_id,
+        wb.war_name,
+        wb.war_type,
+        wb.start_year,
+        wb.end_year,
+        wb.description,
+        LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1
+            AS overlap_years
+    FROM met_artwork ma
+    JOIN culture_country cc ON cc.culture_value = ma.culture
+    JOIN country c ON c.country_id = cc.country_id
+    JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
+    JOIN art_period ap ON ap.period_id = awp.period_id
+    JOIN war_battle wb
+        ON wb.country_name = c.country_name
+        AND wb.start_year <= ap.end_year
+        AND wb.end_year >= ap.start_year
+    WHERE ma.artwork_id = ?
+    GROUP BY wb.war_id, wb.war_name, wb.war_type, wb.start_year, wb.end_year,
+             wb.description, ap.end_year, ap.start_year
+    HAVING LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1 >= 1
+) AS matches
+ORDER BY matches.overlap_years DESC
+LIMIT 4;
+```
+
+**Why complex:** The temporal overlap calculation using LEAST/GREATEST is the key complexity — it computes the intersection of two date ranges (war years vs. art period years) at the row level. The 5-table join chain crosses from artwork through culture_country to country to war_battle, while simultaneously joining through artwork_period to art_period for the temporal dimension. HAVING filters wars with no actual temporal overlap. The derived table wrapping enables clean ORDER BY on the computed overlap.
+
+| Feature | Used |
+|---------|------|
+| Nesting | Yes (derived table) |
+| GROUP BY | Yes |
+| HAVING | Yes (overlap >= 1 year) |
+| Temporal logic | Yes (LEAST/GREATEST overlap) |
+| Multi-source JOIN | Yes (5 tables, 4 data sources) |
+
+---
+
+## Query 14: Art Through Conflict
+
+**Purpose:** Quiz question — "Which artwork was created during this famous war, in the same region?"
+**Data Sources:** War + Country + Art + Period
+**Complexity:** Derived table, correlated subquery, 6-table JOIN, temporal overlap
+
+```sql
+SELECT
+    candidates.artwork_id,
+    candidates.title,
+    candidates.artist_display_name,
+    candidates.period_name,
+    candidates.overlap_years
+FROM (
+    SELECT
+        ma.artwork_id,
+        ma.title,
+        ma.artist_display_name,
+        ap.period_name,
+        LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1
+            AS overlap_years,
+        (
+            SELECT COUNT(DISTINCT ma2.artwork_id)
+            FROM met_artwork ma2
+            JOIN culture_country cc2 ON cc2.culture_value = ma2.culture
+            JOIN country c2 ON c2.country_id = cc2.country_id
+            WHERE c2.country_name = wb.country_name
+        ) AS region_artwork_count
+    FROM war_battle wb
+    JOIN country c ON c.country_name = wb.country_name
+    JOIN culture_country cc ON cc.country_id = c.country_id
+    JOIN met_artwork ma ON ma.culture = cc.culture_value
+    JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
+    JOIN art_period ap ON ap.period_id = awp.period_id
+    WHERE wb.war_id = ?
+      AND wb.start_year <= ap.end_year
+      AND wb.end_year >= ap.start_year
+      AND ma.primary_image_small IS NOT NULL
+) AS candidates
+WHERE candidates.region_artwork_count >= 5
+ORDER BY candidates.overlap_years DESC
+LIMIT 4;
+```
+
+**Why complex:** The reverse direction (war → artwork) requires a 6-table join from war_battle through country and culture_country to artwork and its periods. The correlated subquery counts total artworks from the war's country to ensure statistical significance. The outer WHERE filters on the subquery result — this two-level filtering (temporal overlap in the inner query + region_artwork_count in the outer) cannot be collapsed.
+
+| Feature | Used |
+|---------|------|
+| Nesting | Yes (derived table + correlated subquery) |
+| Correlated subquery | Yes |
+| Temporal logic | Yes (LEAST/GREATEST overlap) |
+| Multi-source JOIN | Yes (6 tables, 4 data sources) |
+
+---
+
+## Query 15: Art Born in Conflict (Analytics)
+
+**Purpose:** Analytics — which continent + period combinations have the most artworks created during active wars.
+**Data Sources:** Art + Period + Country + War
+**Complexity:** Two derived tables, GROUP BY, HAVING, GROUP_CONCAT, temporal overlap, percentage calculation
+
+```sql
+SELECT
+    conflict_art.continent,
+    conflict_art.period_name,
+    conflict_art.artwork_count,
+    conflict_art.war_count,
+    conflict_art.notable_wars,
+    ROUND(conflict_art.artwork_count * 100.0 / total.total_artworks, 1) AS pct_of_total
+FROM (
+    SELECT
+        c.continent,
+        ap.period_name,
+        COUNT(DISTINCT ma.artwork_id) AS artwork_count,
+        COUNT(DISTINCT wb.war_id) AS war_count,
+        GROUP_CONCAT(DISTINCT wb.war_name ORDER BY wb.start_year SEPARATOR ', ') AS notable_wars,
+        ap.period_id
+    FROM met_artwork ma
+    JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
+    JOIN art_period ap ON ap.period_id = awp.period_id
+    JOIN culture_country cc ON cc.culture_value = ma.culture
+    JOIN country c ON c.country_id = cc.country_id
+    JOIN war_battle wb
+        ON wb.country_name = c.country_name
+        AND wb.start_year <= ap.end_year
+        AND wb.end_year >= ap.start_year
+    GROUP BY c.continent, ap.period_id, ap.period_name
+    HAVING COUNT(DISTINCT ma.artwork_id) >= 10
+) AS conflict_art
+JOIN (
+    SELECT
+        ap.period_id,
+        COUNT(DISTINCT awp.artwork_id) AS total_artworks
+    FROM art_period ap
+    JOIN artwork_period awp ON awp.period_id = ap.period_id
+    GROUP BY ap.period_id
+) AS total ON total.period_id = conflict_art.period_id
+ORDER BY conflict_art.artwork_count DESC
+LIMIT 20;
+```
+
+**Why complex:** Two independent derived tables aggregate at different granularities — the first counts conflict-era artworks per continent/period with a 6-table temporal join, while the second counts total artworks per period. They must be separate because the conflict filter in the first would corrupt the total count if merged. GROUP_CONCAT builds a readable list of war names. HAVING ensures statistical significance. The percentage calculation in the outer SELECT depends on both derived tables.
+
+| Feature | Used |
+|---------|------|
+| Nesting | Yes (2 derived tables) |
+| GROUP BY | Yes (both derived tables) |
+| HAVING | Yes (>= 10 artworks) |
+| GROUP_CONCAT | Yes (war names) |
+| Temporal logic | Yes (LEAST/GREATEST implicit in JOIN) |
+| Multi-source JOIN | Yes (6 tables, 4 data sources) |
+
+---
+
 ## Complexity Summary
 
 | # | Name | Quiz? | Nesting | UNION | GROUP BY | HAVING | Correlated | Data Sources |
@@ -660,5 +834,8 @@ ORDER BY d.accuracy_pct ASC;
 | 10 | Period Leaderboard | No | Yes | - | Yes | Yes | Yes | Game+Period |
 | 11 | Session + All-Time | No | - | Yes | Yes | - | - | Game |
 | 12 | Difficulty by Period | No | Yes | - | Yes | Yes | - | Game+Period |
+| 13 | War/Battle from Artwork | Yes | Yes | - | Yes | Yes | - | Art+Period+Country+War |
+| 14 | Art Through Conflict | Yes | Yes | - | Yes | - | Yes | War+Country+Art+Period |
+| 15 | Art Born in Conflict | No | Yes | - | Yes | Yes | - | Art+Period+Country+War |
 
-**Totals:** 12 queries | 9 quiz (75%) | 3 analytics | 10 use nesting | 2 use UNION | 12 use GROUP BY | 10 use HAVING | 5 use correlated subqueries
+**Totals:** 15 queries | 11 quiz (73%) | 4 analytics | 13 use nesting | 2 use UNION | 15 use GROUP BY | 12 use HAVING | 6 use correlated subqueries

@@ -7,7 +7,8 @@ import {
   DifficultyRow,
   ContinentalTimelineRow,
   DepartmentDiversityRow,
-  CrossPeriodArtistRow
+  CrossPeriodArtistRow,
+  ArtBornInConflictRow
 } from '../types';
 import styles from './AnalyticsDashboard.module.css';
 
@@ -16,7 +17,7 @@ interface Props {
   onBack: () => void;
 }
 
-type Tab = 'overview' | 'timeline' | 'departments' | 'wine_art' | 'artists' | 'difficulty';
+type Tab = 'overview' | 'timeline' | 'departments' | 'wine_art' | 'artists' | 'wars' | 'difficulty';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -24,6 +25,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'departments', label: 'Departments' },
   { id: 'wine_art', label: 'Wine & Art' },
   { id: 'artists', label: 'Artists' },
+  { id: 'wars', label: 'Wars & Art' },
   { id: 'difficulty', label: 'Difficulty' }
 ];
 
@@ -251,6 +253,55 @@ function ArtistsTab() {
   );
 }
 
+function WarsTab() {
+  const [data, setData] = useState<ArtBornInConflictRow[] | null>(null);
+
+  useEffect(() => {
+    api.artBornInConflict().then(setData).catch(() => setData([]));
+  }, []);
+
+  if (data === null) return <Loading />;
+
+  const grouped = data.reduce<Record<string, ArtBornInConflictRow[]>>((acc, row) => {
+    (acc[row.continent] ??= []).push(row);
+    return acc;
+  }, {});
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>Art Born in Conflict</h3>
+      <p className={styles.sectionDesc}>Regions where the most art was created during active wars, with temporal overlap joins across 4 data sources (Q15)</p>
+      {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([continent, rows]) => (
+        <div key={continent} className={styles.groupBlock}>
+          <p className={styles.groupLabel}>{continent}</p>
+          <div className={styles.cardGrid}>
+            {rows.sort((a, b) => b.artwork_count - a.artwork_count).map(r => (
+              <div key={`${r.period_name}-${r.continent}`} className={styles.cardWide}>
+                <p className={styles.cardTitle}>{r.period_name}</p>
+                <div className={styles.miniStats}>
+                  <div>
+                    <span className={styles.miniValue}>{r.artwork_count.toLocaleString()}</span>
+                    <span className={styles.miniLabel}>artworks</span>
+                  </div>
+                  <div>
+                    <span className={styles.miniValue}>{r.war_count}</span>
+                    <span className={styles.miniLabel}>conflicts</span>
+                  </div>
+                  <div>
+                    <span className={styles.miniValue}>{r.pct_of_total}%</span>
+                    <span className={styles.miniLabel}>of period</span>
+                  </div>
+                </div>
+                <p className={styles.cardDetail}>{r.notable_wars}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function DifficultyTab() {
   const [data, setData] = useState<DifficultyRow[] | null>(null);
 
@@ -325,6 +376,7 @@ export function AnalyticsDashboard({ username, onBack }: Props) {
         {activeTab === 'departments' && <DepartmentsTab />}
         {activeTab === 'wine_art' && <WineArtTab />}
         {activeTab === 'artists' && <ArtistsTab />}
+        {activeTab === 'wars' && <WarsTab />}
         {activeTab === 'difficulty' && <DifficultyTab />}
       </div>
     </div>

@@ -482,6 +482,140 @@ export async function playerSessionStats(userId: number) {
   });
 }
 
+// Q13: War/Battle from Artwork — "Which conflict raged near this artwork's homeland while it was being created?"
+export async function warFromArtwork(artworkId: number, connection?: Conn) {
+  return useConn(connection, async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT
+          matches.war_name,
+          matches.war_type,
+          matches.start_year,
+          matches.end_year,
+          matches.description,
+          matches.overlap_years
+      FROM (
+          SELECT
+              wb.war_id,
+              wb.war_name,
+              wb.war_type,
+              wb.start_year,
+              wb.end_year,
+              wb.description,
+              LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1
+                  AS overlap_years
+          FROM met_artwork ma
+          JOIN culture_country cc ON cc.culture_value = ma.culture
+          JOIN country c ON c.country_id = cc.country_id
+          JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
+          JOIN art_period ap ON ap.period_id = awp.period_id
+          JOIN war_battle wb
+              ON wb.country_name = c.country_name
+              AND wb.start_year <= ap.end_year
+              AND wb.end_year >= ap.start_year
+          WHERE ma.artwork_id = ?
+          GROUP BY wb.war_id, wb.war_name, wb.war_type, wb.start_year, wb.end_year,
+                   wb.description, ap.end_year, ap.start_year
+          HAVING LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1 >= 1
+      ) AS matches
+      ORDER BY matches.overlap_years DESC
+      LIMIT 4`,
+      [artworkId]
+    );
+    return rows;
+  });
+}
+
+// Q14: Artwork from War — "Which artwork was created during this famous war, in the same region?"
+export async function artworkFromWar(warId: number, connection?: Conn) {
+  return useConn(connection, async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT
+          candidates.artwork_id,
+          candidates.title,
+          candidates.artist_display_name,
+          candidates.period_name,
+          candidates.overlap_years
+      FROM (
+          SELECT
+              ma.artwork_id,
+              ma.title,
+              ma.artist_display_name,
+              ap.period_name,
+              LEAST(wb.end_year, ap.end_year) - GREATEST(wb.start_year, ap.start_year) + 1
+                  AS overlap_years,
+              (
+                  SELECT COUNT(DISTINCT ma2.artwork_id)
+                  FROM met_artwork ma2
+                  JOIN culture_country cc2 ON cc2.culture_value = ma2.culture
+                  JOIN country c2 ON c2.country_id = cc2.country_id
+                  WHERE c2.country_name = wb.country_name
+              ) AS region_artwork_count
+          FROM war_battle wb
+          JOIN country c ON c.country_name = wb.country_name
+          JOIN culture_country cc ON cc.country_id = c.country_id
+          JOIN met_artwork ma ON ma.culture = cc.culture_value
+          JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
+          JOIN art_period ap ON ap.period_id = awp.period_id
+          WHERE wb.war_id = ?
+            AND wb.start_year <= ap.end_year
+            AND wb.end_year >= ap.start_year
+            AND ma.primary_image_small IS NOT NULL
+      ) AS candidates
+      WHERE candidates.region_artwork_count >= 5
+      ORDER BY candidates.overlap_years DESC
+      LIMIT 4`,
+      [warId]
+    );
+    return rows;
+  });
+}
+
+// Q15: Art Born in Conflict — Regions where most art was created during active wars
+export async function artBornInConflict() {
+  return withConnection(async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT
+          conflict_art.continent,
+          conflict_art.period_name,
+          conflict_art.artwork_count,
+          conflict_art.war_count,
+          conflict_art.notable_wars,
+          ROUND(conflict_art.artwork_count * 100.0 / total.total_artworks, 1) AS pct_of_total
+      FROM (
+          SELECT
+              c.continent,
+              ap.period_name,
+              COUNT(DISTINCT ma.artwork_id) AS artwork_count,
+              COUNT(DISTINCT wb.war_id) AS war_count,
+              GROUP_CONCAT(DISTINCT wb.war_name ORDER BY wb.start_year SEPARATOR ', ') AS notable_wars,
+              ap.period_id
+          FROM met_artwork ma
+          JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id
+          JOIN art_period ap ON ap.period_id = awp.period_id
+          JOIN culture_country cc ON cc.culture_value = ma.culture
+          JOIN country c ON c.country_id = cc.country_id
+          JOIN war_battle wb
+              ON wb.country_name = c.country_name
+              AND wb.start_year <= ap.end_year
+              AND wb.end_year >= ap.start_year
+          GROUP BY c.continent, ap.period_id, ap.period_name
+          HAVING COUNT(DISTINCT ma.artwork_id) >= 10
+      ) AS conflict_art
+      JOIN (
+          SELECT
+              ap.period_id,
+              COUNT(DISTINCT awp.artwork_id) AS total_artworks
+          FROM art_period ap
+          JOIN artwork_period awp ON awp.period_id = ap.period_id
+          GROUP BY ap.period_id
+      ) AS total ON total.period_id = conflict_art.period_id
+      ORDER BY conflict_art.artwork_count DESC
+      LIMIT 20`
+    );
+    return rows;
+  });
+}
+
 // Q12: Question Difficulty by Art Period
 export async function difficultyByPeriod() {
   return withConnection(async (conn) => {

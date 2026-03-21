@@ -1,4 +1,4 @@
-import { AnswerResponse, Round, User, PlayerStats, LeaderboardEntry, WineArtCountryRow, DifficultyRow, ContinentalTimelineRow, DepartmentDiversityRow, CrossPeriodArtistRow } from '../types';
+import { AnswerResponse, Round, User, PlayerStats, LeaderboardEntry, WineArtCountryRow, DifficultyRow, ContinentalTimelineRow, DepartmentDiversityRow, CrossPeriodArtistRow, ArtBornInConflictRow } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -102,5 +102,9 @@ export const api = {
 
   crossPeriodArtists(): Promise<CrossPeriodArtistRow[]> {
     return request<CrossPeriodArtistRow[]>('/api/analytics/cross-period-artists');
+  },
+
+  artBornInConflict(): Promise<ArtBornInConflictRow[]> {
+    return request<ArtBornInConflictRow[]>('/api/analytics/art-born-in-conflict');
   }
 };
