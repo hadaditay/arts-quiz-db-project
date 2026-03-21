@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import { config } from './config';
 import { authRoutes } from './routes/auth';
 import { roundRoutes } from './routes/rounds';
+import { analyticsRoutes } from './routes/analytics';
 import { getSession, touchSession } from './services/sessionService';
 
 const app = Fastify({ logger: true });
@@ -34,6 +35,7 @@ app.addHook('preHandler', async (request) => {
 
 app.register(authRoutes);
 app.register(roundRoutes);
+app.register(analyticsRoutes);
 
 app.get('/health', async () => ({ status: 'ok' }));
 

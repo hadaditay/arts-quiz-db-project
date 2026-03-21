@@ -1,0 +1,92 @@
+variety,food_name,cuisine_region
+Pinot Noir,Coq au Vin,French
+Pinot Noir,Duck Confit,French
+Pinot Noir,Grilled Salmon,International
+Pinot Noir,Mushroom Risotto,Italian
+Cabernet Sauvignon,Beef Bourguignon,French
+Cabernet Sauvignon,Grilled Ribeye Steak,American
+Cabernet Sauvignon,Lamb Chops,Mediterranean
+Cabernet Sauvignon,Dark Chocolate Truffles,International
+Chardonnay,Lobster Thermidor,French
+Chardonnay,Roast Chicken,French
+Chardonnay,Creamy Pasta Alfredo,Italian
+Chardonnay,Brie and Pear Crostini,French
+Merlot,Braised Short Ribs,French
+Merlot,Beef Stew,International
+Merlot,Pork Tenderloin,International
+Merlot,Aged Gouda,Dutch
+Sauvignon Blanc,Goat Cheese Salad,French
+Sauvignon Blanc,Ceviche,Peruvian
+Sauvignon Blanc,Sushi,Japanese
+Sauvignon Blanc,Grilled Asparagus,International
+Riesling,Wiener Schnitzel,German
+Riesling,Pad Thai,Thai
+Riesling,Peking Duck,Chinese
+Riesling,Apple Strudel,Austrian
+Sangiovese,Osso Buco,Italian
+Sangiovese,Margherita Pizza,Italian
+Sangiovese,Pappardelle al Ragu,Italian
+Sangiovese,Bruschetta,Italian
+Tempranillo,Paella,Spanish
+Tempranillo,Chorizo Tapas,Spanish
+Tempranillo,Manchego Cheese,Spanish
+Tempranillo,Lamb Stew,Spanish
+Malbec,Asado,Argentine
+Malbec,Empanadas,Argentine
+Malbec,Grilled Chimichurri Steak,Argentine
+Malbec,Blue Cheese,International
+Syrah,Cassoulet,French
+Syrah,Lamb Tagine,Moroccan
+Syrah,BBQ Ribs,American
+Syrah,Merguez Sausage,North African
+Nebbiolo,Truffle Risotto,Italian
+Nebbiolo,Braised Veal,Italian
+Nebbiolo,Porcini Pasta,Italian
+Nebbiolo,Aged Parmesan,Italian
+Grenache,Ratatouille,French
+Grenache,Grilled Mediterranean Vegetables,Mediterranean
+Grenache,Bouillabaisse,French
+Grenache,Tapenade,French
+Prosecco,Prosciutto e Melone,Italian
+Prosecco,Fried Calamari,Italian
+Prosecco,Caprese Salad,Italian
+Champagne,Oysters,French
+Champagne,Caviar,Russian
+Champagne,Smoked Salmon Blini,French
+Champagne,Fois Gras,French
+Zinfandel,BBQ Pulled Pork,American
+Zinfandel,Spicy Jambalaya,American
+Zinfandel,Pepperoni Pizza,American
+Zinfandel,Grilled Sausages,International
+Gruner Veltliner,Tafelspitz,Austrian
+Gruner Veltliner,Sushi,Japanese
+Gruner Veltliner,White Asparagus,Austrian
+Gewurztraminer,Dim Sum,Chinese
+Gewurztraminer,Munster Cheese,French
+Gewurztraminer,Thai Green Curry,Thai
+Viognier,Scallops,French
+Viognier,Apricot Glazed Chicken,International
+Moscato,Fruit Tart,French
+Moscato,Tiramisu,Italian
+Moscato,Almond Biscotti,Italian
+Port,Stilton Cheese,British
+Port,Dark Chocolate Mousse,French
+Port,Creme Brulee,French
+Sherry,Jamon Iberico,Spanish
+Sherry,Almonds,Spanish
+Sherry,Gazpacho,Spanish
+Cabernet Franc,Roast Duck,French
+Cabernet Franc,Herbed Goat Cheese,French
+Pinot Grigio,Seafood Risotto,Italian
+Pinot Grigio,Grilled Shrimp,Mediterranean
+Pinot Grigio,Caprese Salad,Italian
+Albarino,Gambas al Ajillo,Spanish
+Albarino,Grilled Octopus,Spanish
+Torrontes,Ceviche,Argentine
+Torrontes,Spicy Empanadas,Argentine
+Carmenere,Pastel de Choclo,Chilean
+Carmenere,Grilled Lamb,Chilean
+Pinotage,Bobotie,South African
+Pinotage,Biltong,South African
+Tannat,Chivito,Uruguayan
+Tannat,Asado,Uruguayan

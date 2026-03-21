@@ -3,10 +3,20 @@ import { choice, shuffle } from '../utils/random';
 import { QuestionGenerator } from './base';
 import { cultureQuestion } from './cultureQuestion';
 import { departmentQuestion } from './departmentQuestion';
+import { wineRegionQuestion } from './wineRegionQuestion';
+import { foodPairingQuestion } from './foodPairingQuestion';
+import { artPeriodQuestion } from './artPeriodQuestion';
+import { sommelierQuestion } from './sommelierQuestion';
+import { sensoryQuestion } from './sensoryQuestion';
 
 const generators: QuestionGenerator[] = [
   departmentQuestion,
-  cultureQuestion
+  cultureQuestion,
+  wineRegionQuestion,
+  foodPairingQuestion,
+  artPeriodQuestion,
+  sommelierQuestion,
+  sensoryQuestion
 ];
 
 export function listQuestionGenerators() {
@@ -33,8 +43,12 @@ export async function generateQuestion(
     : shuffle([...generators]);
 
   for (const generator of ordered) {
-    const result = await generator.generate({ connection });
-    if (result) return result;
+    try {
+      const result = await generator.generate({ connection });
+      if (result) return result;
+    } catch (err) {
+      console.warn(`Question generator "${generator.id}" failed:`, (err as Error).message);
+    }
   }
 
   return null;

@@ -1,4 +1,4 @@
-export type QuestionType = 'department' | 'culture';
+export type QuestionType = 'department' | 'culture' | 'wine_region' | 'food_pairing' | 'art_period' | 'sommelier' | 'sensory';
 
 export interface ArtworkRef {
   id: number;

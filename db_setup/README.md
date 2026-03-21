@@ -32,12 +32,48 @@ Run everything from the repository root.
 "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --local-infile=1 -u root -p -P 3307 curators_eye < db_setup/04_load_artworks.sql
 ```
 
-## 7) Optional verify
+## 7) Load art periods
 ```bat
-"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p -P 3307 -D curators_eye -e "SELECT COUNT(*) AS users_count FROM game_user; SELECT COUNT(*) AS artists_count FROM artist_profile; SELECT COUNT(*) AS artworks_count FROM met_artwork;"
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --local-infile=1 -u root -p -P 3307 curators_eye < db_setup/05_load_art_periods.sql
 ```
 
-## 8) Backend
+## 8) Map artworks to periods
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p -P 3307 curators_eye < db_setup/06_map_artwork_periods.sql
+```
+
+## 9) Load countries
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --local-infile=1 -u root -p -P 3307 curators_eye < db_setup/07_load_countries.sql
+```
+
+## 10) Map cultures to countries
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p -P 3307 curators_eye < db_setup/08_map_culture_country.sql
+```
+
+## 11) Load wines
+Download `winemag-data-130k-v2.csv` from [Kaggle Wine Reviews](https://www.kaggle.com/datasets/zynicide/wine-reviews) and place it in `data/wines/`.
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --local-infile=1 -u root -p -P 3307 curators_eye < db_setup/09_load_wines.sql
+```
+
+## 12) Load wine food pairings
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --local-infile=1 -u root -p -P 3307 curators_eye < db_setup/10_load_wine_food_pairings.sql
+```
+
+## 13) Add performance indexes
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p -P 3307 curators_eye < db_setup/11_add_performance_indexes.sql
+```
+
+## 14) Optional verify
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p -P 3307 -D curators_eye -e "SELECT COUNT(*) AS users_count FROM game_user; SELECT COUNT(*) AS artists_count FROM artist_profile; SELECT COUNT(*) AS artworks_count FROM met_artwork; SELECT COUNT(*) AS periods FROM art_period; SELECT COUNT(*) AS artwork_periods FROM artwork_period; SELECT COUNT(*) AS countries FROM country; SELECT COUNT(*) AS culture_mappings FROM culture_country; SELECT COUNT(*) AS wines FROM wine; SELECT COUNT(*) AS food_pairings FROM wine_food_pairing;"
+```
+
+## 15) Backend
 ```bat
 cd apps\backend
 copy .env.example .env
@@ -45,7 +81,7 @@ npm install
 npm run dev
 ```
 
-## 9) Frontend
+## 16) Frontend
 Open a new terminal:
 ```bat
 cd apps\frontend

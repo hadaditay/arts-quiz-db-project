@@ -50,7 +50,7 @@ const parseTags = (value: unknown): string[] | null => {
   return null;
 };
 
-function mapArtworkRow(row: RowDataPacket): Artwork {
+export function mapArtworkRow(row: RowDataPacket): Artwork {
   return {
     artworkId: row.artwork_id,
     title: row.title,
@@ -73,7 +73,7 @@ function hasImage(row: RowDataPacket): boolean {
   );
 }
 
-async function hydrateArtworkImage(row: RowDataPacket, connection: PoolConnection): Promise<RowDataPacket> {
+export async function hydrateArtworkImage(row: RowDataPacket, connection: PoolConnection): Promise<RowDataPacket> {
   if (hasImage(row) || Boolean(row.image_checked) || !Boolean(row.is_public_domain)) {
     return row;
   }
@@ -155,6 +155,40 @@ export async function getDistinctFieldValues(
   );
 
   return rows.map((row) => row.value as string);
+}
+
+export async function getRandomMappedArtwork(
+  connection: PoolConnection,
+  requirePeriod = false
+): Promise<Artwork | null> {
+  const periodJoin = requirePeriod
+    ? 'JOIN artwork_period awp ON awp.artwork_id = ma.artwork_id'
+    : '';
+
+  const [rows] = await connection.query<RowDataPacket[]>(
+    `SELECT
+       ma.artwork_id, ma.title, ma.department, ma.culture,
+       ma.artist_display_name, ma.is_public_domain, ma.is_highlight,
+       ma.primary_image, ma.primary_image_small, ma.image_checked,
+       ma.object_url, ma.tags
+     FROM met_artwork ma
+     JOIN culture_country cc ON cc.culture_value = ma.culture
+     ${periodJoin}
+     WHERE ma.is_public_domain = 1
+     ORDER BY RAND()
+     LIMIT 18`
+  );
+
+  if (!rows.length) return null;
+
+  for (const row of rows) {
+    const hydrated = await hydrateArtworkImage(row, connection);
+    if (hasImage(hydrated)) {
+      return mapArtworkRow(hydrated);
+    }
+  }
+
+  return null;
 }
 
 export async function buildOptionsForField(

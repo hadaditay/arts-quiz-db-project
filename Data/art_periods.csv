@@ -1,0 +1,31 @@
+period_name,region,start_year,end_year
+Ancient Egyptian,African,-3100,-30
+Ancient Greek,European,-800,-146
+Ancient Roman,European,-509,476
+Byzantine,European,330,1453
+Medieval,European,500,1400
+Islamic Golden Age,Middle Eastern,750,1258
+Romanesque,European,1000,1200
+Gothic,European,1150,1400
+Renaissance,European,1400,1600
+Mughal,South Asian,1526,1857
+Ming Dynasty,East Asian,1368,1644
+Edo Period,East Asian,1603,1868
+Baroque,European,1600,1750
+Rococo,European,1720,1780
+Neoclassicism,European,1760,1850
+Romanticism,European,1800,1870
+Pre-Raphaelite,European,1848,1900
+Impressionism,European,1860,1886
+Post-Impressionism,European,1886,1905
+Art Nouveau,European,1890,1910
+Meiji Period,East Asian,1868,1912
+Arts and Crafts,European,1880,1920
+Modernism,European,1900,1960
+Art Deco,European,1920,1940
+Abstract Expressionism,American,1940,1960
+Pop Art,American,1955,1970
+Contemporary,Global,1960,2025
+Pre-Columbian,American,-2000,1500
+African Traditional,African,-500,1900
+Qing Dynasty,East Asian,1644,1912

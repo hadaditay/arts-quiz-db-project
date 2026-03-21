@@ -1,0 +1,70 @@
+country_name,iso_code,continent
+United States,US,North America
+France,FR,Europe
+Italy,IT,Europe
+Germany,DE,Europe
+United Kingdom,GB,Europe
+Spain,ES,Europe
+Netherlands,NL,Europe
+Belgium,BE,Europe
+Austria,AT,Europe
+Switzerland,CH,Europe
+Russia,RU,Europe
+Greece,GR,Europe
+Turkey,TR,Europe
+Egypt,EG,Africa
+China,CN,Asia
+Japan,JP,Asia
+India,IN,Asia
+Iran,IR,Asia
+Iraq,IQ,Asia
+South Korea,KR,Asia
+Indonesia,ID,Asia
+Thailand,TH,Asia
+Vietnam,VN,Asia
+Cambodia,KH,Asia
+Myanmar,MM,Asia
+Pakistan,PK,Asia
+Afghanistan,AF,Asia
+Mexico,MX,North America
+Peru,PE,South America
+Colombia,CO,South America
+Brazil,BR,South America
+Argentina,AR,South America
+Chile,CL,South America
+Canada,CA,North America
+Australia,AU,Oceania
+New Zealand,NZ,Oceania
+Nigeria,NG,Africa
+Ghana,GH,Africa
+Ethiopia,ET,Africa
+Kenya,KE,Africa
+South Africa,ZA,Africa
+Morocco,MO,Africa
+Tunisia,TN,Africa
+Algeria,DZ,Africa
+Portugal,PT,Europe
+Sweden,SE,Europe
+Denmark,DK,Europe
+Norway,NO,Europe
+Finland,FI,Europe
+Poland,PL,Europe
+Czech Republic,CZ,Europe
+Hungary,HU,Europe
+Romania,RO,Europe
+Ireland,IE,Europe
+Scotland,XS,Europe
+Syria,SY,Asia
+Lebanon,LB,Asia
+Israel,IL,Asia
+Jordan,JO,Asia
+Philippines,PH,Asia
+Nepal,NP,Asia
+Sri Lanka,LK,Asia
+Guatemala,GT,North America
+Bolivia,BO,South America
+Ecuador,EC,South America
+Panama,PA,North America
+Cuba,CU,North America
+Haiti,HT,North America
+Dominican Republic,DO,North America
