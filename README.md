@@ -1,165 +1,211 @@
 # Curator's Eye
 
-Art trivia game powered by MET collection data, a Fastify + MySQL backend, and a React frontend.
+Curator's Eye is an image-based art trivia game built on top of The Metropolitan Museum of Art Open Access data. It combines a **Fastify + MySQL** backend with a **React + Vite** frontend, and now includes richer quiz content, post-answer educational context, and analytics views.
+
+## What the project does
+
+Players log in, answer image-based multiple-choice questions about artworks, and view leaderboard results. The game uses MET collection metadata plus enrichment datasets such as art periods, countries, wines, food pairings, and wars/conflicts.
 
 ## Main features
-- Sign in / sign up with username, password, first name, and last name
-- Home screen with a **"התחל לשחק"** button
-- Exit button inside the game
-- Skip button for moving to the next round
-- Image-based rounds for supported question types
-- Image URLs are fetched from the public MET API on first use and cached in MySQL
+
+- User authentication with sessions and cookies
+- Image-based quiz rounds using MET artwork images
+- Multiple question types beyond the original department/culture quiz
+- Artwork image caching from the MET API into MySQL
+- Post-answer **Curator's Note / enrichment** panel
+- Analytics dashboard with cross-domain views such as art + wine and art + history
+- Leaderboard and session summary views
 
 ## Current question types
-- department
-- culture
 
-Both current question types require an image. The backend only selects artworks that can resolve an image through the MET API cache flow.
+The project now supports these quiz types:
 
-## Project layout
-- `apps/backend` — Fastify API and ETL scripts
-- `apps/frontend` — React (Vite) frontend
-- `data/met/` — Met museum CSVs (artworks, artists) — large file via Git LFS
-- `data/wines/` — wine food pairing CSV (wine reviews CSV must be downloaded separately)
-- `data/historical/` — art periods, countries, wars/battles CSVs
-- `data/users/` — user data CSV and generator script
-- `db_setup/` — SQL scripts to create and populate the database
-- `scripts/` — helper scripts (DB setup)
+- **department** — Which museum department is this artwork associated with?
+- **culture** — Which culture is this artwork associated with?
+- **art_period** — Which art period is associated with this artwork / its origin?
+- **wine_region** — Which wine region is associated with the artwork's related country/origin?
+- **food_pairing** — Which food pairing best matches the related wine/country context?
+- **sommelier** — Which wine would best pair with this artwork?
+- **war_conflict** — Which war or conflict is historically associated with the artwork's place/time context?
+- **artwork_name** — What is the name of this artwork?
+- **artist_nationality** — What is the nationality of the artist who created this artwork?
 
----
+## Important UI behavior
 
-## Prerequisites
+- Quiz rounds that depend on artwork images require a valid MET image
+- For the **artwork_name** question, the artwork title is intentionally **hidden beneath the image** so the answer is not revealed
+- Images are fetched from the MET API and cached after the first successful lookup
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| **Node.js** | >= 18 | [nodejs.org](https://nodejs.org/) |
-| **npm** | (bundled with Node) | Workspaces support required |
-| **MySQL** | 8.0+ | [mysql.com/downloads](https://dev.mysql.com/downloads/mysql/) |
-| **Git LFS** | any | [git-lfs.com](https://git-lfs.com/) — needed to pull the large MET CSV |
+## Enrichment
 
-### Optional data
-- **Wine reviews CSV** — download `winemag-data-130k-v2.csv` from [Kaggle Wine Reviews](https://www.kaggle.com/datasets/zynicide/wine-reviews) and place it in `data/wines/`. Wine-related question types won't work without it.
+After answering a question, the app can show a **Curator's Note** panel with extra context, for example:
 
----
+- artwork details
+- artist information
+- country / culture context
+- art period context
+- wine / food pairing context
+- war / conflict context
 
-## Quick Start
+This is meant to make the game feel more educational and less like a simple right/wrong quiz.
 
-### 1. Clone the repo
+## Analytics
 
-```bash
-git clone <repo-url>
-cd arts-quiz-db-project
-```
+The project also includes analytics endpoints and frontend views for richer exploration of the data, including areas such as:
 
-If you see a ~50 MB `MetObjects_update.csv` that is only a pointer file, pull the real data:
+- wine and art relationships
+- food pairings
+- art periods and geography
+- war/conflict overlap
+- leaderboard and player statistics
+- difficulty / performance by category or period
 
-```bash
-git lfs install
-git lfs pull
-```
+## Project structure
 
-### 2. Install Node dependencies
+- `apps/backend` — Fastify API, services, question generators, ETL helpers
+- `apps/frontend` — React application and UI components
+- `data/` — datasets used by the project
+  - `data/met/` — MET datasets
+  - `data/historical/` — art periods, countries, wars/battles
+  - `data/users/` — generated users CSV
+  - `data/wines/` — wine data and wine-food pairing data
+- `db_setup/` — SQL scripts for schema creation and data loading
+- `docs/` — project notes and complex query documentation
+
+## Tech stack
+
+- **Frontend:** React, TypeScript, Vite
+- **Backend:** Fastify, TypeScript
+- **Database:** MySQL 8
+- **Data sources:** MET Open Access + supplemental historical / wine datasets
+
+## Requirements
+
+- Node.js >= 18
+- MySQL 8.0+
+- Git LFS recommended for large tracked assets
+- The wine dataset file used by `db_setup/09_load_wines.sql`
+
+## Database setup notes
+
+### Important
+Use the schema from:
+
+- `db_setup/01_schema.sql`
+
+and **not only** `apps/backend/db/schema.sql` if you want the full extended project, because the full setup includes the extra tables used by features such as wars/conflicts and analytics.
+
+### Expected SQL flow
+
+Recommended order:
+
+1. `db_setup/00_create_database.sql`
+2. `db_setup/01_schema.sql`
+3. `db_setup/02_load_users.sql`
+4. `db_setup/03_load_artists.sql`
+5. `db_setup/04_load_artworks.sql`
+6. `db_setup/05_load_art_periods.sql`
+7. `db_setup/06_map_artwork_periods.sql`
+8. `db_setup/07_load_countries.sql`
+9. `db_setup/08_map_culture_country.sql`
+10. `db_setup/09_load_wines.sql`
+11. `db_setup/10_load_wine_food_pairings.sql`
+12. `db_setup/12_load_wars.sql`
+
+`db_setup/11_add_performance_indexes.sql` may be unnecessary if those indexes already exist in the schema you created.
+
+### Dataset caveats
+
+- `MetObjects_update.csv` must be the **real CSV file**, not a Git LFS pointer text file
+- The wines import expects the wine dataset required by `db_setup/09_load_wines.sql`
+- If artworks, artwork-period mappings, or culture-country mappings are unexpectedly low, verify that the MET CSV actually contains data and was imported correctly
+
+## Quick start
+
+### 1. Install dependencies
+
+From the repo root:
 
 ```bash
 npm install
+cd apps/backend && npm install
+cd ../frontend && npm install
 ```
 
-This installs both backend and frontend dependencies via npm workspaces.
+### 2. Configure backend env
 
-### 3. Set up MySQL database
-
-Make sure your MySQL server is running, then from the **repo root**:
+Copy:
 
 ```bash
-bash scripts/setup_db.sh
+apps/backend/.env.example
 ```
 
-The script will:
-- Prompt for your MySQL password (press Enter if none)
-- Create the `curators_eye` database
-- Create all tables
-- Load all CSV data (users, artists, artworks, art periods, countries, wars)
-- Load wine data if the Kaggle CSV is present (skips gracefully if not)
-- Add performance indexes
-- Print row counts to verify
-
-You can customize the connection with env vars:
+to:
 
 ```bash
-MYSQL_USER=myuser MYSQL_PORT=3307 bash scripts/setup_db.sh
+apps/backend/.env
 ```
 
-### 4. Configure the backend
+Then set your MySQL connection details.
+
+Example values used during development:
+
+```env
+PORT=4000
+CORS_ORIGIN=http://localhost:5173
+MYSQL_URL=mysql://root:YOUR_PASSWORD@127.0.0.1:3307/curators_eye
+SESSION_SECRET=change-me
+```
+
+### 3. Prepare MySQL
+
+- Enable `LOCAL INFILE`
+- Create the database
+- Run the schema
+- Load the datasets in the order shown above
+
+### 4. Run the apps
+
+Backend:
 
 ```bash
-cp apps/backend/.env.example apps/backend/.env
+cd apps/backend
+npm run dev
 ```
 
-Edit `apps/backend/.env` and set:
-- `MYSQL_PORT` — your MySQL port (default 3306)
-- `MYSQL_PASSWORD` — your MySQL password
-- `SESSION_SECRET` — any random string
-
-### 5. Start the app
-
-In two terminals (or use `&`):
+Frontend:
 
 ```bash
-# Terminal 1 — backend (runs on port 4000)
-npm run dev:backend
-
-# Terminal 2 — frontend (runs on port 5173)
-npm run dev:frontend
+cd apps/frontend
+npm run dev
 ```
 
-Open http://localhost:5173 in your browser.
+Frontend default URL:
 
----
-
-## All-in-one copy-paste (macOS / Linux)
-
-```bash
-git clone <repo-url>
-cd arts-quiz-db-project
-git lfs pull
-npm install
-cp apps/backend/.env.example apps/backend/.env
-# Edit apps/backend/.env with your MySQL credentials
-bash scripts/setup_db.sh
-npm run dev:backend &
-npm run dev:frontend
+```text
+http://localhost:5173
 ```
 
-## Windows
+## Troubleshooting
 
-The same steps apply. Use `mysql` from your MySQL installation directory or add it to your PATH. The setup script requires Git Bash or WSL:
+### Login stopped working after rebuilding the DB
+If the database was recreated, previously registered users and sessions may have been wiped. Reload the users dataset and log in again with an existing user from `data/users/users_data.csv`, or register a new user.
 
-```bash
-bash scripts/setup_db.sh
-```
+### Wine / wars sections show no data
+Usually this means one of the related tables was not loaded correctly:
 
-Or run each SQL file manually with `mysql`:
+- `wine`
+- `wine_food_pairing`
+- `war_battle`
+- `country`
+- `culture_country`
+- `artwork_period`
 
-```cmd
-mysql -u root -p < db_setup/00_create_database.sql
-mysql -u root -p curators_eye < db_setup/01_schema.sql
-mysql --local-infile=1 -u root -p curators_eye < db_setup/02_load_users.sql
-:: ... continue with 03 through 12 in order
-```
-
----
-
-## Other commands
-
-```bash
-npm run build          # Build both frontend and backend
-npm run lint           # Lint both workspaces
-npm run test           # Run tests in both workspaces
-npm run dev:backend    # Start backend in dev mode
-npm run dev:frontend   # Start frontend in dev mode
-```
+### Only a tiny number of artworks loaded
+Check that `data/met/MetObjects_update.csv` is the real dataset and not a Git LFS pointer file.
 
 ## Notes
-- Images are fetched on demand from the public MET API and cached in the database. The first request for an artwork image may be slightly slower.
-- The SQL `LOAD DATA LOCAL INFILE` statements use relative paths — always run them from the repo root.
-- The `data/met/MetObjects_update.csv` (~50 MB) is stored with Git LFS. Make sure `git lfs` is installed before cloning.
+
+- Some original MET metadata fields are noisy, especially culture-like labels
+- Question quality depends heavily on dataset cleanliness and mappings
+- The app is designed for educational gameplay, not strict art-historical certainty in every generated option

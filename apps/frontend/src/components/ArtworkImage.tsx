@@ -6,9 +6,10 @@ interface Props {
   fullSrc: string | null;
   title: string;
   required?: boolean;
+  hideTitle?: boolean;
 }
 
-export function ArtworkImage({ smallSrc, fullSrc, title, required = false }: Props) {
+export function ArtworkImage({ smallSrc, fullSrc, title, required = false, hideTitle = false }: Props) {
   const [displaySrc, setDisplaySrc] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [fullReady, setFullReady] = useState(false);
@@ -72,7 +73,7 @@ export function ArtworkImage({ smallSrc, fullSrc, title, required = false }: Pro
         <img src={displaySrc} alt={title} className={styles.image} />
       </div>
       <div className={styles.imageFooter}>
-        <span>{title}</span>
+        {!hideTitle ? <span>{title}</span> : <span />}
         <div className={styles.actions}>
           {!fullReady && fullSrc ? <span className={styles.subtle}>Loading HD…</span> : null}
           {fullSrc ? (

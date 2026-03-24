@@ -1,4 +1,4 @@
-export type QuestionTypeId = 'department' | 'culture' | 'wine_region' | 'food_pairing' | 'art_period' | 'sommelier' | 'sensory' | 'war_conflict';
+export type QuestionTypeId = 'department' | 'culture' | 'wine_region' | 'food_pairing' | 'art_period' | 'sommelier' | 'sensory' | 'war_conflict' | 'artist_nationality' | 'artwork_name';
 
 export interface Artwork {
   artworkId: number;
@@ -167,6 +167,22 @@ export interface WarConflictEnrichment {
   siblingConflicts: Array<{ warName: string; warType: string; startYear: number; endYear: number }>;
 }
 
+export interface ArtistNationalityEnrichment {
+  type: 'artist_nationality';
+  connectionTrail: string[];
+  artwork: ArtworkContext;
+  artist: ArtistContext | null;
+  nationality: string;
+}
+
+export interface ArtworkNameEnrichment {
+  type: 'artwork_name';
+  connectionTrail: string[];
+  artwork: ArtworkContext;
+  artist: ArtistContext | null;
+  relatedTitles: string[];
+}
+
 export type AnswerEnrichment =
   | DepartmentEnrichment
   | CultureEnrichment
@@ -175,4 +191,6 @@ export type AnswerEnrichment =
   | ArtPeriodEnrichment
   | SommelierEnrichment
   | SensoryEnrichment
-  | WarConflictEnrichment;
+  | WarConflictEnrichment
+  | ArtistNationalityEnrichment
+  | ArtworkNameEnrichment;

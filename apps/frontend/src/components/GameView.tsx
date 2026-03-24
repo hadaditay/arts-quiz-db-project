@@ -15,7 +15,9 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   art_period: 'Art Period',
   sommelier: 'Sommelier',
   sensory: 'Sensory',
-  war_conflict: 'War & Conflict'
+  war_conflict: 'War & Conflict',
+  artist_nationality: 'Artist Nationality',
+  artwork_name: 'Artwork Name'
 };
 
 export interface SessionResult {
@@ -159,6 +161,7 @@ export function GameView({ user, onExit, onSessionEnd }: Props) {
           fullSrc={round.artwork.primaryImage}
           title={round.artwork.title}
           required={round.requiresImage}
+          hideTitle={round.questionType === 'artwork_name'}
         />
       ) : null}
 

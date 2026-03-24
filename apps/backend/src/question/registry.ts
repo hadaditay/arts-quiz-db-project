@@ -9,6 +9,8 @@ import { artPeriodQuestion } from './artPeriodQuestion';
 import { sommelierQuestion } from './sommelierQuestion';
 import { sensoryQuestion } from './sensoryQuestion';
 import { warConflictQuestion } from './warConflictQuestion';
+import { artistNationalityQuestion } from './artistNationalityQuestion';
+import { artworkNameQuestion } from './artworkNameQuestion';
 
 const generators: QuestionGenerator[] = [
   departmentQuestion,
@@ -18,7 +20,9 @@ const generators: QuestionGenerator[] = [
   artPeriodQuestion,
   sommelierQuestion,
   sensoryQuestion,
-  warConflictQuestion
+  warConflictQuestion,
+  artistNationalityQuestion,
+  artworkNameQuestion
 ];
 
 export function listQuestionGenerators() {

@@ -304,6 +304,41 @@ function WarConflictContent({ e }: { e: Extract<AnswerEnrichment, { type: 'war_c
   );
 }
 
+
+function ArtistNationalityContent({ e }: { e: Extract<AnswerEnrichment, { type: 'artist_nationality' }> }) {
+  const { artwork, artist, nationality, connectionTrail } = e;
+  return (
+    <>
+      <ArtworkInfo artwork={artwork} artist={artist} />
+      <ConnectionTrail steps={connectionTrail} />
+      <p className={styles.narrative}>
+        The artist behind this work is associated with <strong>{nationality}</strong> nationality.
+      </p>
+    </>
+  );
+}
+
+function ArtworkNameContent({ e }: { e: Extract<AnswerEnrichment, { type: 'artwork_name' }> }) {
+  const { artwork, artist, relatedTitles, connectionTrail } = e;
+  return (
+    <>
+      <ArtworkInfo artwork={artwork} artist={artist} />
+      <ConnectionTrail steps={connectionTrail} />
+      {relatedTitles.length > 0 && (
+        <div>
+          <p className={styles.sectionLabel}>More works by this artist</p>
+          <div className={styles.cardRow}>
+            {relatedTitles.map((title) => (
+              <div key={title} className={styles.card}>
+                <p className={styles.cardTitle}>{title}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 export function EnrichmentPanel({ enrichment }: Props) {
   const [open, setOpen] = useState(true);
 
@@ -317,6 +352,8 @@ export function EnrichmentPanel({ enrichment }: Props) {
     case 'sommelier':    content = <SommelierContent e={enrichment} />; break;
     case 'sensory':      content = <SensoryContent e={enrichment} />; break;
     case 'war_conflict': content = <WarConflictContent e={enrichment} />; break;
+    case 'artist_nationality': content = <ArtistNationalityContent e={enrichment} />; break;
+    case 'artwork_name': content = <ArtworkNameContent e={enrichment} />; break;
   }
 
   return (

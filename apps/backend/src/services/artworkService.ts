@@ -10,6 +10,11 @@ const FIELD_MAP = {
 
 export type ArtworkField = keyof typeof FIELD_MAP;
 
+export interface ArtworkWithArtistNationality {
+  artwork: Artwork;
+  nationality: string;
+}
+
 const BASE_SELECT = `SELECT
   artwork_id,
   title,
@@ -64,6 +69,25 @@ export function mapArtworkRow(row: RowDataPacket): Artwork {
     objectUrl: row.object_url,
     tags: parseTags(row.tags)
   };
+}
+
+export function extractArtistNationality(bio: string | null | undefined): string | null {
+  if (!bio) return null;
+
+  const first = bio.split('|')[0]?.trim();
+  if (!first) return null;
+
+  const candidate = (first.includes(',') ? first.split(',')[0] : first).trim();
+  if (!candidate) return null;
+  if (/\d/.test(candidate)) return null;
+  if (!/\p{L}/u.test(candidate)) return null;
+
+  const lowered = candidate.toLowerCase();
+  if (lowered.startsWith('active') || lowered.startsWith('ca.') || lowered.startsWith('possibly ')) {
+    return null;
+  }
+
+  return candidate.length > 80 ? null : candidate;
 }
 
 function hasImage(row: RowDataPacket): boolean {
@@ -204,4 +228,116 @@ export async function buildOptionsForField(
     value,
     label: value
   }));
+}
+
+export async function getRandomArtworkWithTitle(
+  connection: PoolConnection,
+  requireImage = false
+): Promise<Artwork | null> {
+  const candidateLimit = requireImage ? 18 : 1;
+
+  const [rows] = await connection.query<RowDataPacket[]>(
+    `${BASE_SELECT}
+     WHERE title IS NOT NULL
+       AND title != ''
+       ${requireImage ? 'AND is_public_domain = 1' : ''}
+     ORDER BY RAND()
+     LIMIT ${candidateLimit}`
+  );
+
+  if (!rows.length) return null;
+
+  for (const row of rows) {
+    const hydrated = requireImage ? await hydrateArtworkImage(row, connection) : row;
+    if (!requireImage || hasImage(hydrated)) {
+      return mapArtworkRow(hydrated);
+    }
+  }
+
+  return null;
+}
+
+export async function getDistinctArtworkTitles(
+  exclude: string,
+  limit: number,
+  connection: PoolConnection
+): Promise<string[]> {
+  const [rows] = await connection.query<RowDataPacket[]>(
+    `SELECT DISTINCT title AS value
+     FROM met_artwork
+     WHERE title IS NOT NULL
+       AND title != ''
+       AND title != ?
+     ORDER BY RAND()
+     LIMIT ?`,
+    [exclude, limit]
+  );
+
+  return rows.map((row) => row.value as string);
+}
+
+export async function getRandomArtworkWithArtistNationality(
+  connection: PoolConnection,
+  requireImage = false
+): Promise<ArtworkWithArtistNationality | null> {
+  const candidateLimit = requireImage ? 40 : 12;
+
+  const [rows] = await connection.query<RowDataPacket[]>(
+    `SELECT
+       ma.artwork_id, ma.title, ma.department, ma.culture,
+       ma.artist_display_name, ma.is_public_domain, ma.is_highlight,
+       ma.primary_image, ma.primary_image_small, ma.image_checked,
+       ma.object_url, ma.tags, ap.bio
+     FROM met_artwork ma
+     JOIN artist_profile ap ON ap.full_name = ma.artist_display_name
+     WHERE ma.artist_display_name IS NOT NULL
+       AND ma.artist_display_name != ''
+       AND ap.bio IS NOT NULL
+       AND ap.bio != ''
+       ${requireImage ? 'AND ma.is_public_domain = 1' : ''}
+     ORDER BY RAND()
+     LIMIT ${candidateLimit}`
+  );
+
+  if (!rows.length) return null;
+
+  for (const row of rows) {
+    const nationality = extractArtistNationality(typeof row.bio === 'string' ? row.bio : null);
+    if (!nationality) continue;
+
+    const hydrated = requireImage ? await hydrateArtworkImage(row, connection) : row;
+    if (!requireImage || hasImage(hydrated)) {
+      return { artwork: mapArtworkRow(hydrated), nationality };
+    }
+  }
+
+  return null;
+}
+
+export async function getDistinctArtistNationalities(
+  exclude: string,
+  limit: number,
+  connection: PoolConnection
+): Promise<string[]> {
+  const [rows] = await connection.query<RowDataPacket[]>(
+    `SELECT bio
+     FROM artist_profile
+     WHERE bio IS NOT NULL
+       AND bio != ''
+     ORDER BY RAND()
+     LIMIT 400`
+  );
+
+  const values: string[] = [];
+  const seen = new Set<string>([exclude]);
+
+  for (const row of rows) {
+    const nationality = extractArtistNationality(typeof row.bio === 'string' ? row.bio : null);
+    if (!nationality || seen.has(nationality)) continue;
+    seen.add(nationality);
+    values.push(nationality);
+    if (values.length >= limit) break;
+  }
+
+  return values;
 }

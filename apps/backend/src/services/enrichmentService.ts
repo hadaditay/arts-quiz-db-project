@@ -381,6 +381,57 @@ async function enrichWarConflict(artworkId: number, correctValue: string, conn: 
   };
 }
 
+
+async function enrichArtistNationality(artworkId: number, correctValue: string, conn: Conn): Promise<AnswerEnrichment> {
+  const artwork = await getArtworkContext(artworkId, conn);
+  const artist = await getArtistProfile(artwork?.artistName ?? null, conn);
+
+  const trail: string[] = [];
+  if (artwork?.title) trail.push(artwork.title);
+  if (artwork?.artistName) trail.push(artwork.artistName);
+  trail.push(correctValue);
+
+  return {
+    type: 'artist_nationality',
+    connectionTrail: trail,
+    artwork: artwork!,
+    artist,
+    nationality: correctValue
+  };
+}
+
+async function enrichArtworkName(artworkId: number, conn: Conn): Promise<AnswerEnrichment> {
+  const artwork = await getArtworkContext(artworkId, conn);
+  const artist = await getArtistProfile(artwork?.artistName ?? null, conn);
+
+  const [rows] = await conn.query<RowDataPacket[]>(
+    `SELECT title
+     FROM met_artwork
+     WHERE artist_display_name = ?
+       AND artwork_id != ?
+       AND title IS NOT NULL
+       AND title != ''
+     ORDER BY RAND()
+     LIMIT 3`,
+    [artwork?.artistName ?? '', artworkId]
+  );
+
+  const relatedTitles = rows.map((r) => r.title as string);
+
+  const trail: string[] = [];
+  if (artwork?.artistName) trail.push(artwork.artistName);
+  if (artwork?.culture) trail.push(artwork.culture);
+  if (artwork?.title) trail.push(artwork.title);
+
+  return {
+    type: 'artwork_name',
+    connectionTrail: trail,
+    artwork: artwork!,
+    artist,
+    relatedTitles
+  };
+}
+
 // --- Main export ---
 
 export async function getEnrichment(
@@ -400,6 +451,8 @@ export async function getEnrichment(
         case 'sommelier':    return enrichSommelier(artworkId, conn);
         case 'sensory':      return enrichSensory(artworkId, conn);
         case 'war_conflict': return enrichWarConflict(artworkId, correctValue, conn);
+        case 'artist_nationality': return enrichArtistNationality(artworkId, correctValue, conn);
+        case 'artwork_name': return enrichArtworkName(artworkId, conn);
         default:             return undefined;
       }
     });
