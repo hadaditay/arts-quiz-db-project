@@ -1,7 +1,7 @@
 # Curator's Eye
 
 Curator's Eye is an image-based art trivia game built on top of The Metropolitan Museum of Art Open Access data. It combines a **Fastify + MySQL** backend with a **React + Vite** frontend, and now includes richer quiz content, post-answer educational context, and analytics views.
-
+ 
 ## What the project does
 
 Players log in, answer image-based multiple-choice questions about artworks, and view leaderboard results. The game uses MET collection metadata plus enrichment datasets such as art periods, countries, wines, food pairings, and wars/conflicts.
