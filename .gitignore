@@ -206,6 +206,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# Generated intermediate files
+data/met/MetObjects_clean.tsv
+
 # Large data files (downloaded from Kaggle)
 data/wines/*
 !data/wines/wine_food_pairings.csv

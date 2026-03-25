@@ -1,12 +1,11 @@
 USE curators_eye;
 
-LOAD DATA LOCAL INFILE 'data/met/MetObjects_update.csv'
+-- Requires: python3 scripts/preprocess_met_csv.py (generates the clean TSV)
+LOAD DATA LOCAL INFILE 'data/met/MetObjects_clean.tsv'
 INTO TABLE met_artwork
 CHARACTER SET utf8mb4
-FIELDS TERMINATED BY ','
-ENCLOSED BY '"'
-LINES TERMINATED BY '
-'
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
 IGNORE 1 LINES
 (
   @object_number,
@@ -31,21 +30,21 @@ IGNORE 1 LINES
   @repository
 )
 SET
-  artwork_id = NULLIF(TRIM(TRAILING '' FROM @object_id), ''),
-  title = NULLIF(TRIM(TRAILING '' FROM @title), ''),
-  department = NULLIF(TRIM(TRAILING '' FROM @department), ''),
-  culture = NULLIF(TRIM(TRAILING '' FROM @culture), ''),
-  artist_display_name = NULLIF(TRIM(TRAILING '' FROM @artist_display_name), ''),
+  artwork_id = @object_id,
+  title = NULLIF(@title, ''),
+  department = NULLIF(@department, ''),
+  culture = NULLIF(@culture, ''),
+  artist_display_name = NULLIF(@artist_display_name, ''),
   is_public_domain = CASE
-    WHEN LOWER(TRIM(TRAILING '' FROM @is_public_domain)) = 'true' THEN 1
+    WHEN LOWER(@is_public_domain) = 'true' THEN 1
     ELSE 0
   END,
   is_highlight = CASE
-    WHEN LOWER(TRIM(TRAILING '' FROM @is_highlight)) = 'true' THEN 1
+    WHEN LOWER(@is_highlight) = 'true' THEN 1
     ELSE 0
   END,
   primary_image = NULL,
   primary_image_small = NULL,
   image_checked = 0,
-  object_url = NULLIF(TRIM(TRAILING '' FROM @link_resource), ''),
+  object_url = NULLIF(@link_resource, ''),
   tags = NULL;

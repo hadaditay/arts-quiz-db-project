@@ -40,6 +40,9 @@ $MYSQL_CMD --local-infile=1 curators_eye < db_setup/02_load_users.sql
 echo "==> Loading artists..."
 $MYSQL_CMD --local-infile=1 curators_eye < db_setup/03_load_artists.sql
 
+echo "==> Preprocessing MET CSV..."
+python3 scripts/preprocess_met_csv.py
+
 echo "==> Loading artworks..."
 $MYSQL_CMD --local-infile=1 curators_eye < db_setup/04_load_artworks.sql
 

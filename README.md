@@ -82,6 +82,7 @@ The project also includes analytics endpoints and frontend views for richer expl
 ## Requirements
 
 - Node.js >= 18
+- Python 3 (used to preprocess the MET CSV before DB import — stdlib only, no pip packages needed)
 - MySQL 8.0+
 - Git LFS recommended for large tracked assets
 - The wine dataset file used by `db_setup/09_load_wines.sql`
