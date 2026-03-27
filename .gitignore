@@ -208,6 +208,7 @@ __marimo__/
 
 # Generated intermediate files
 data/met/MetObjects_clean.tsv
+db_setup/generated/
 
 # Large data files (downloaded from Kaggle)
 data/wines/*

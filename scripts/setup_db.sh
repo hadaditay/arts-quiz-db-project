@@ -29,13 +29,6 @@ fi
 
 echo "==> Using database: ${DB_NAME}"
 
-echo "==> Enabling LOCAL INFILE..."
-if $MYSQL_CMD -e "SET GLOBAL local_infile = 1;" 2>&1; then
-  echo "    done"
-else
-  echo "    (skipped — no SUPER privilege; assuming server already has it enabled)"
-fi
-
 echo "==> Creating database (if permitted)..."
 if $MYSQL_CMD -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1; then
   echo "    done"
@@ -46,48 +39,50 @@ fi
 echo "==> Creating tables..."
 $MYSQL_CMD "$DB_NAME" < db_setup/01_schema.sql
 
+# ---- Generate INSERT SQL files from CSVs ----
+echo "==> Generating INSERT SQL from CSVs (this may take a moment)..."
+python3 scripts/csv_to_inserts.py
+
 echo "==> Loading users..."
-$MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/02_load_users.sql
+$MYSQL_CMD "$DB_NAME" < db_setup/generated/02_users.sql
 
 echo "==> Loading artists..."
-$MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/03_load_artists.sql
+$MYSQL_CMD "$DB_NAME" < db_setup/generated/03_artists.sql
 
-echo "==> Preprocessing MET CSV..."
-python3 scripts/preprocess_met_csv.py
-
-echo "==> Loading artworks..."
-$MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/04_load_artworks.sql
+echo "==> Loading artworks (202K rows — may take a few minutes)..."
+$MYSQL_CMD "$DB_NAME" < db_setup/generated/04_artworks.sql
 
 echo "==> Loading art periods..."
-$MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/05_load_art_periods.sql
+$MYSQL_CMD "$DB_NAME" < db_setup/generated/05_art_periods.sql
 
 echo "==> Mapping artworks to periods..."
 $MYSQL_CMD "$DB_NAME" < db_setup/06_map_artwork_periods.sql
 
 echo "==> Loading countries..."
-$MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/07_load_countries.sql
+$MYSQL_CMD "$DB_NAME" < db_setup/generated/07_countries.sql
 
 echo "==> Mapping cultures to countries..."
 $MYSQL_CMD "$DB_NAME" < db_setup/08_map_culture_country.sql
 
 # Wine data
-if [ -f data/wines/winemag-data-130k-v2.csv ]; then
+if [ -f db_setup/generated/09_wines.sql ]; then
   echo "==> Loading wines..."
-  $MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/09_load_wines.sql
+  $MYSQL_CMD "$DB_NAME" < db_setup/generated/09_wines.sql
 
   echo "==> Loading wine food pairings..."
-  $MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/10_load_wine_food_pairings.sql
+  $MYSQL_CMD "$DB_NAME" < db_setup/generated/10_wine_food_pairings.sql
 else
-  echo "!! Skipping wine data (winemag-data-130k-v2.csv not found)."
-  echo "   Download from: https://www.kaggle.com/datasets/zynicide/wine-reviews"
-  echo "   Place winemag-data-130k-v2.csv in data/wines/ and re-run this script."
+  echo "==> Loading wine food pairings (wine reviews CSV not available)..."
+  $MYSQL_CMD "$DB_NAME" < db_setup/generated/10_wine_food_pairings.sql
 fi
 
-echo "==> Adding performance indexes..."
-$MYSQL_CMD "$DB_NAME" < db_setup/11_add_performance_indexes.sql
-
 echo "==> Loading wars & battles..."
-$MYSQL_CMD --local-infile=1 "$DB_NAME" < db_setup/12_load_wars.sql
+$MYSQL_CMD "$DB_NAME" < db_setup/generated/12_wars.sql
+
+echo "==> Adding performance indexes..."
+if ! $MYSQL_CMD "$DB_NAME" < db_setup/11_add_performance_indexes.sql 2>&1; then
+  echo "    (some indexes already exist — OK)"
+fi
 
 echo ""
 echo "==> Verifying row counts..."

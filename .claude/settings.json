@@ -44,7 +44,17 @@
       "Bash(git -C /Users/itayhadad/MyPersonalProjects/arts-quiz-db-project ls-files package-lock.json)",
       "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SELECT ''met_artwork'' AS tbl, COUNT\\(*\\) AS rows_count FROM met_artwork UNION ALL SELECT ''artist_profile'', COUNT\\(*\\) FROM artist_profile UNION ALL SELECT ''game_user'', COUNT\\(*\\) FROM game_user UNION ALL SELECT ''art_period'', COUNT\\(*\\) FROM art_period UNION ALL SELECT ''artwork_period'', COUNT\\(*\\) FROM artwork_period UNION ALL SELECT ''country'', COUNT\\(*\\) FROM country UNION ALL SELECT ''culture_country'', COUNT\\(*\\) FROM culture_country UNION ALL SELECT ''wine'', COUNT\\(*\\) FROM wine UNION ALL SELECT ''wine_food_pairing'', COUNT\\(*\\) FROM wine_food_pairing UNION ALL SELECT ''war_battle'', COUNT\\(*\\) FROM war_battle;\")",
       "Bash(for f:*)",
-      "Bash(do sed:*)"
+      "Bash(do sed:*)",
+      "Bash(python3 scripts/csv_to_inserts.py)",
+      "Bash(DB_NAME=curators_eye MYSQL_USER=root MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_PWD=\"\" bash scripts/setup_db.sh)",
+      "Bash(DB_NAME=curators_eye MYSQL_USER=root MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_PWD=\"\" bash -x scripts/setup_db.sh)",
+      "Bash(export MYSQL_PWD=\"\")",
+      "Bash(export DB_NAME=curators_eye)",
+      "Bash(export MYSQL_USER=root)",
+      "Bash(export MYSQL_HOST=127.0.0.1)",
+      "Bash(export MYSQL_PORT=3306)",
+      "Bash(bash scripts/setup_db.sh)",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SELECT ''met_artwork'' AS tbl, COUNT\\(*\\) AS cnt FROM met_artwork UNION ALL SELECT ''artist_profile'', COUNT\\(*\\) FROM artist_profile UNION ALL SELECT ''game_user'', COUNT\\(*\\) FROM game_user UNION ALL SELECT ''art_period'', COUNT\\(*\\) FROM art_period UNION ALL SELECT ''artwork_period'', COUNT\\(*\\) FROM artwork_period UNION ALL SELECT ''country'', COUNT\\(*\\) FROM country UNION ALL SELECT ''culture_country'', COUNT\\(*\\) FROM culture_country UNION ALL SELECT ''wine_food_pairing'', COUNT\\(*\\) FROM wine_food_pairing UNION ALL SELECT ''war_battle'', COUNT\\(*\\) FROM war_battle;\")"
     ]
   }
 }
