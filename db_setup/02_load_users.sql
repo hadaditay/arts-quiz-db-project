@@ -1,4 +1,3 @@
-USE curators_eye;
 
 LOAD DATA LOCAL INFILE 'data/users/users_data.csv'
 INTO TABLE game_user

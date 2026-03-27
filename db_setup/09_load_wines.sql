@@ -1,4 +1,3 @@
-USE curators_eye;
 
 LOAD DATA LOCAL INFILE 'data/wines/winemag-data-130k-v2.csv'
 INTO TABLE wine

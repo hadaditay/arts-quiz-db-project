@@ -1,4 +1,3 @@
-USE curators_eye;
 
 SELECT COUNT(*) AS users_count FROM game_user;
 SELECT COUNT(*) AS artists_count FROM artist_profile;

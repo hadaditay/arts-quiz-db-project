@@ -1,4 +1,3 @@
-USE curators_eye;
 
 LOAD DATA LOCAL INFILE 'data/historical/art_periods.csv'
 INTO TABLE art_period

@@ -1,4 +1,3 @@
-USE curators_eye;
 
 LOAD DATA LOCAL INFILE 'data/met/met_artists.csv'
 INTO TABLE artist_profile

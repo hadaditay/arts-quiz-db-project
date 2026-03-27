@@ -1,4 +1,3 @@
-USE curators_eye;
 
 LOAD DATA LOCAL INFILE 'data/wines/wine_food_pairings.csv'
 INTO TABLE wine_food_pairing

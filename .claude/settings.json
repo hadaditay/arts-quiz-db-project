@@ -34,7 +34,17 @@
       "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SHOW INDEX FROM war_battle;\")",
       "Bash(time mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \":*)",
       "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"CREATE INDEX idx_wfp_variety ON wine_food_pairing \\(variety\\);\")",
-      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SELECT question_type, COUNT\\(*\\) FROM game_round GROUP BY question_type ORDER BY COUNT\\(*\\) DESC;\")"
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SELECT question_type, COUNT\\(*\\) FROM game_round GROUP BY question_type ORDER BY COUNT\\(*\\) DESC;\")",
+      "Bash(git -C /Users/itayhadad/MyPersonalProjects/arts-quiz-db-project ls-files data/)",
+      "Bash(du -sh /Users/itayhadad/MyPersonalProjects/arts-quiz-db-project/data/met/*.csv)",
+      "Bash(git -C /Users/itayhadad/MyPersonalProjects/arts-quiz-db-project lfs ls-files)",
+      "Bash(git -C /Users/itayhadad/MyPersonalProjects/arts-quiz-db-project ls-files data/wines/)",
+      "Bash(npm install:*)",
+      "Bash(chmod +x /Users/itayhadad/MyPersonalProjects/arts-quiz-db-project/scripts/setup_db.sh)",
+      "Bash(git -C /Users/itayhadad/MyPersonalProjects/arts-quiz-db-project ls-files package-lock.json)",
+      "Bash(mysql -u root -h 127.0.0.1 -P 3306 curators_eye -e \"SELECT ''met_artwork'' AS tbl, COUNT\\(*\\) AS rows_count FROM met_artwork UNION ALL SELECT ''artist_profile'', COUNT\\(*\\) FROM artist_profile UNION ALL SELECT ''game_user'', COUNT\\(*\\) FROM game_user UNION ALL SELECT ''art_period'', COUNT\\(*\\) FROM art_period UNION ALL SELECT ''artwork_period'', COUNT\\(*\\) FROM artwork_period UNION ALL SELECT ''country'', COUNT\\(*\\) FROM country UNION ALL SELECT ''culture_country'', COUNT\\(*\\) FROM culture_country UNION ALL SELECT ''wine'', COUNT\\(*\\) FROM wine UNION ALL SELECT ''wine_food_pairing'', COUNT\\(*\\) FROM wine_food_pairing UNION ALL SELECT ''war_battle'', COUNT\\(*\\) FROM war_battle;\")",
+      "Bash(for f:*)",
+      "Bash(do sed:*)"
     ]
   }
 }

@@ -1,4 +1,3 @@
-USE curators_eye;
 
 -- Requires: python3 scripts/preprocess_met_csv.py (generates the clean TSV)
 LOAD DATA LOCAL INFILE 'data/met/MetObjects_clean.tsv'

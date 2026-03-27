@@ -1,4 +1,3 @@
-USE curators_eye;
 
 -- Map artworks to art periods based on artist birth/death years and culture keywords.
 -- An artwork matches a period if the artist was active during that period

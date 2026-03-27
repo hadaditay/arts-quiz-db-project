@@ -1,4 +1,3 @@
-USE curators_eye;
 
 -- Indexes to speed up the 12 complex analytics queries.
 -- Safe to re-run: CREATE INDEX IF NOT EXISTS (MySQL 8.0.29+) or use separate statements.

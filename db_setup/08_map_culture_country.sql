@@ -1,4 +1,3 @@
-USE curators_eye;
 
 -- Map each distinct culture value in met_artwork to a country using pattern matching.
 -- Only the first/primary country match is stored (one culture -> one country).

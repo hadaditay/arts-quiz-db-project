@@ -1,4 +1,3 @@
-USE curators_eye;
 
 LOAD DATA LOCAL INFILE 'data/historical/wars_battles.csv'
 INTO TABLE war_battle
