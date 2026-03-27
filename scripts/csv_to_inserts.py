@@ -101,7 +101,11 @@ def gen_artworks():
     tsv_path = os.path.join(REPO, "data", "met", "MetObjects_clean.tsv")
     if not os.path.exists(tsv_path):
         print("  [artworks] MetObjects_clean.tsv not found, running preprocessor...")
-        os.system(f"{sys.executable} {os.path.join(REPO, 'scripts', 'preprocess_met_csv.py')}")
+        import subprocess
+        subprocess.run(
+            [sys.executable, os.path.join(REPO, "scripts", "preprocess_met_csv.py")],
+            check=True,
+        )
 
     rows = []
     with open(tsv_path, "r", encoding="utf-8") as f:
