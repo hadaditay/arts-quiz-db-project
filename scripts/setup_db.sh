@@ -41,7 +41,11 @@ $MYSQL_CMD "$DB_NAME" < db_setup/01_schema.sql
 
 # ---- Generate INSERT SQL files from CSVs ----
 echo "==> Generating INSERT SQL from CSVs (this may take a moment)..."
-PYTHON="${PYTHON:-$(command -v python3 || command -v python)}"
+if python3 --version >/dev/null 2>&1; then
+  PYTHON=python3
+else
+  PYTHON=python
+fi
 $PYTHON scripts/csv_to_inserts.py
 
 echo "==> Loading users..."
